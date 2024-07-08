@@ -1,3 +1,5 @@
+import cv2
+
 from agents.dqn_agent import *
 from abc_rl.experience_replay import *
 from abc_rl.exploration import *
@@ -29,6 +31,8 @@ class DQNPlayGround:
                     action = self.agent.select_action(obs, RandomAction())
                 # environment step
                 next_state, reward_raw, done, truncated, lives_decreased, inf = self.env.step(action)
+                # cv2.imshow('state', cv2.resize(next_state,[840,840]))
+                # cv2.waitKey(1)
                 # reward shaping
                 reward = self.agent.reward_shaping(reward_raw)
                 # perception mapping next state
