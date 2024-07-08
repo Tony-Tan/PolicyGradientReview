@@ -92,5 +92,4 @@ class DQNPlayGround:
                 state = next_state
                 step_i += 1
             step_cum += step_i
-        return (reward_cum / self.cfg['agent_test_episodes'] ,
-                step_cum / self.cfg['agent_test_episodes'] )
+        return reward_cum / self.cfg['agent_test_episodes'], step_cum / self.cfg['agent_test_episodes']

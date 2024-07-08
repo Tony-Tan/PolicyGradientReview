@@ -9,7 +9,7 @@ from tools.dqn_play_ground import DQNPlayGround
 parser = argparse.ArgumentParser(description='PyTorch dqn_pp training arguments')
 parser.add_argument('--env_name', default='ALE/Seaquest-v5', type=str,
                     help='openai gym environment (default: ALE/Pong-v5)')
-parser.add_argument('--device', default='mps', type=str,
+parser.add_argument('--device', default='cuda:0', type=str,
                     help='calculation device default: cuda')
 parser.add_argument('--log_path', default='../exps/dqn_pp/', type=str,
                     help='log save path，default: /exps/dqn_pp/')
