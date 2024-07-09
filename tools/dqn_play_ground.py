@@ -23,16 +23,15 @@ class DQNPlayGround:
             step_i = reward_cumulated = 0
             # perception mapping
             obs = self.agent.perception_mapping(state, step_i)
+            no_op_steps = np.random.randint(self.cfg['no_op_max'])
             while not (done or truncated):
                 # no op for the first few steps and then select action by epsilon greedy or other exploration methods
-                if len(self.agent.memory) > self.cfg['replay_start_size'] and step_i >= self.cfg['no_op']:
+                if len(self.agent.memory) > self.cfg['replay_start_size'] and step_i >= no_op_steps:
                     action = self.agent.select_action(obs)
                 else:
-                    action = self.agent.select_action(obs, RandomAction())
+                    action = 0 # no op
                 # environment step
                 next_state, reward_raw, done, truncated, inf = self.env.step(action)
-                # cv2.imshow('state', cv2.resize(next_state,[840,840]))
-                # cv2.waitKey(1)
 
                 # reward shaping
                 reward = self.agent.reward_shaping(reward_raw)

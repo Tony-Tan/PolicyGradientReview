@@ -60,8 +60,9 @@ class AtariEnv:
             self.last_frame = state
         if self.gray_state_Y:
             state = cv2.cvtColor(state, cv2.COLOR_BGR2YUV)[:, :, 0]
+            # state = cv2.cvtColor(state, cv2.COLOR_BGR2GRAY)
         if self.screen_size:
-            state = cv2.resize(state, [self.screen_size, self.screen_size])
+            state = cv2.resize(state, [self.screen_size, self.screen_size], cv2.INTER_NEAREST)
 
         if self.scale_state:
             state = state/255.
@@ -76,6 +77,8 @@ class AtariEnv:
             if self.remove_flickering:
                 self.last_frame = state
             state, reward, done, trunc, info = self.env.step(action)
+            cv2.imshow('raw_state', state)
+            cv2.waitKey(0)
             if 'lives' in info.keys():
                 if info['lives'] < self.lives_counter:
                     self.lives_counter = info['lives']
@@ -90,13 +93,15 @@ class AtariEnv:
                 break
         if self.gray_state_Y:
             state = cv2.cvtColor(state, cv2.COLOR_BGR2YUV)[:, :, 0]
+            # state = cv2.cvtColor(state, cv2.COLOR_BGR2GRAY)
         if self.screen_size:
-            state = cv2.resize(state, [self.screen_size, self.screen_size])
+            state = cv2.resize(state, [self.screen_size, self.screen_size], cv2.INTER_NEAREST)
         if self.remove_flickering:
             if self.gray_state_Y:
                 last_frame = cv2.cvtColor(self.last_frame, cv2.COLOR_BGR2YUV)[:, :, 0]
+                # last_frame = cv2.cvtColor(state, cv2.COLOR_BGR2GRAY)
             if self.screen_size:
-                last_frame = cv2.resize(last_frame, [self.screen_size, self.screen_size])
+                last_frame = cv2.resize(last_frame, [self.screen_size, self.screen_size], cv2.INTER_NEAREST)
             state = np.maximum(state, last_frame)
         if self.scale_state:
             state = state / 255.

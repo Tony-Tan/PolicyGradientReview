@@ -24,7 +24,6 @@ from experience_replay.uniform_experience_replay import *
 from abc_rl.perception_mapping import *
 from abc_rl.reward_shaping import *
 from exploration.epsilon_greedy import *
-from abc_rl.info_process import *
 
 # Define the image normalization function
 # the input of neural network is the uint8 matrix, so we need to normalize the image to [-0.5,0.5]
