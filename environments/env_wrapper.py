@@ -72,18 +72,16 @@ class AtariEnv:
         reward_cum = 0
         state = self.last_frame
         done = trunc = info = None
-        last_frame = None
         for i in range(self.frame_skip):
             if self.remove_flickering:
                 self.last_frame = state
             state, reward, done, trunc, info = self.env.step(action)
-            cv2.imshow('raw_state', state)
-            cv2.waitKey(0)
+            # cv2.imshow('raw_state', state)
+            # cv2.waitKey(0)
             if 'lives' in info.keys():
                 if info['lives'] < self.lives_counter:
                     self.lives_counter = info['lives']
                     reward_cum = -1
-                    done = True
                     break
                 elif info['lives'] > self.lives_counter:
                     self.lives_counter = info['lives']
@@ -91,18 +89,14 @@ class AtariEnv:
             reward_cum += reward
             if done or trunc:
                 break
+        if self.remove_flickering:
+            state = np.maximum(state, self.last_frame)
         if self.gray_state_Y:
             state = cv2.cvtColor(state, cv2.COLOR_BGR2YUV)[:, :, 0]
             # state = cv2.cvtColor(state, cv2.COLOR_BGR2GRAY)
         if self.screen_size:
             state = cv2.resize(state, [self.screen_size, self.screen_size], cv2.INTER_NEAREST)
-        if self.remove_flickering:
-            if self.gray_state_Y:
-                last_frame = cv2.cvtColor(self.last_frame, cv2.COLOR_BGR2YUV)[:, :, 0]
-                # last_frame = cv2.cvtColor(state, cv2.COLOR_BGR2GRAY)
-            if self.screen_size:
-                last_frame = cv2.resize(last_frame, [self.screen_size, self.screen_size], cv2.INTER_NEAREST)
-            state = np.maximum(state, last_frame)
+
         if self.scale_state:
             state = state / 255.
         return state, reward_cum, done, trunc, info

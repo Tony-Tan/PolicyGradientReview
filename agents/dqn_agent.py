@@ -118,6 +118,7 @@ class DQNValueFunction(ValueFunction):
 
         self.synchronize_value_nn()
         self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
+        # self.optimizer = torch.optim.RMSprop(self.value_nn.parameters(), lr=0.00025, alpha=0.95, momentum=0.95, eps=0.01)
         self.learning_rate = learning_rate
         self.gamma = gamma
         self.device = device
