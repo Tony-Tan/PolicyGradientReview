@@ -26,8 +26,11 @@ class DQNPlayGround:
             no_op_steps = np.random.randint(self.cfg['no_op_max'])
             while not (done or truncated):
                 # no op for the first few steps and then select action by epsilon greedy or other exploration methods
-                if len(self.agent.memory) > self.cfg['replay_start_size'] and step_i >= no_op_steps:
-                    action = self.agent.select_action(obs)
+                if step_i >= no_op_steps:
+                    if len(self.agent.memory) > self.cfg['replay_start_size']:
+                        action = self.agent.select_action(obs)
+                    else:
+                        action = self.agent.select_action(obs, RandomAction())
                 else:
                     action = 0 # no op
                 # environment step
