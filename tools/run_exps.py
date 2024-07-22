@@ -30,7 +30,7 @@ for game in games:
     screen_name = f"{game.split('/')[1]}"
 
     # Combine commands to activate env and start training in one command string
-    combined_command = f"{python_path}&&{base_command} '{game}'"
+    combined_command = f"{python_path}&&{base_command} '{game}' '--n_times 5'"
 
     # Full command to run in screen
     screen_command = f"screen -dmS {screen_name} bash -c '{combined_command}; exec bash'"
