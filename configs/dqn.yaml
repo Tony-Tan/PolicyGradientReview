@@ -1,7 +1,7 @@
 mini_batch_size: 32
 batch_num_per_epoch: 100_000
-replay_buffer_size: 250_000
-training_steps: 30_000_000
+replay_buffer_size: 1_000_000
+training_steps: 20_000_000
 skip_k_frame: 4
 phi_channel: 4
 device: 'cuda: 0'
@@ -11,7 +11,7 @@ gamma: 0.99
 no_op_max: 30
 save_path: './exps/'
 log_path: '../exps/dqn/'
-learning_rate: 0.00005
+learning_rate: 0.00001
 step_c: 10_000
 epsilon_max: 1.
 epsilon_min: 0.1
