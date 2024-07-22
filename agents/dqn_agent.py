@@ -11,19 +11,17 @@
 #
 # paper: [Human-level control through deep reinforcement learning](https://www.nature.com/articles/nature14236)
 
-import cv2
-import numpy as np
 import torch.optim
 import torch.nn.functional as F
 from collections import deque
 from abc_rl.agent import Agent
 from models.dqn_networks import DQNAtari
 from abc_rl.policy import *
-from abc_rl.exploration import *
 from experience_replay.uniform_experience_replay import *
 from abc_rl.perception_mapping import *
 from abc_rl.reward_shaping import *
 from exploration.epsilon_greedy import *
+
 
 # Define the image normalization function
 # the input of neural network is the uint8 matrix, so we need to normalize the image to [-0.5,0.5]
@@ -106,7 +104,6 @@ class DQNPerceptionMapping(PerceptionMapping):
 
 #  Class for value function in DQN for Atari games.
 class DQNValueFunction(ValueFunction):
-
     def __init__(self, input_channel: int, action_dim: int, learning_rate: float,
                  gamma: float, model_saving_period: int, device: torch.device, logger: Logger, ):
         super(DQNValueFunction, self).__init__()
@@ -206,13 +203,53 @@ class DQNValueFunction(ValueFunction):
             return state_action_values
 
 
+class DQNExperienceReplay(UniformExperienceReplay):
+    def __init__(self, capacity: int, phi_channel: int):
+        super(DQNExperienceReplay, self).__init__(capacity)
+        self.phi_channel = phi_channel
+
+    def get_items(self, idx):
+        idx_size = len(idx)
+        obs = np.zeros((idx_size, self.phi_channel, *self.buffer[0][0].shape), dtype=np.float32)
+        next_obs = np.zeros((idx_size, self.phi_channel, *self.buffer[0][0].shape), dtype=np.float32)
+        action = np.zeros(idx_size, dtype=np.float32)
+        reward = np.zeros(idx_size, dtype=np.float32)
+        done = np.zeros(idx_size, dtype=np.float32)
+        truncated = np.zeros(idx_size, dtype=np.float32)
+        for i, idx_i in enumerate(idx):
+            _, a, r, _, d, t = self.buffer[idx_i - 1]
+            # the observation is store from 0 to idx_size in obs_next_obs
+            obs[i] = np.array([self.buffer[j][0] for j in range(idx_i - self.phi_channel, idx_i)], dtype=np.float32)
+            # the next observation is store from idx_size to -1 in obs_next_obs
+            next_obs[i] = np.array([self.buffer[j][3] for j in range(idx_i - self.phi_channel, idx_i)],
+                                   dtype=np.float32)
+            action[i] = a
+            reward[i] = r
+            # the truncated is store from 0 to idx_size in done_truncated
+            done[i] = d
+            # the truncated is store from idx_size to -1 in done_truncated
+            truncated[i] = t
+        obs = torch.from_numpy(obs)
+        next_obs = torch.from_numpy(next_obs)
+        action = torch.from_numpy(action)
+        reward = torch.from_numpy(reward)
+        done = torch.from_numpy(done)
+        truncated = torch.from_numpy(truncated)
+        return obs, action, reward, next_obs, done, truncated
+
+    def sample(self, batch_size: int):
+        idx = np.random.choice(np.arange(1, int(self.__len__() / self.phi_channel)),
+                               batch_size, replace=False) * self.phi_channel
+        return self.get_items(idx)
+
+
 # DQN agent for Atari games
 class DQNAgent(Agent):
     """
     Class for DQN agent for Atari games.
     """
 
-    def __init__(self,  screen_size: int, action_space,
+    def __init__(self, screen_size: int, action_space,
                  mini_batch_size: int, replay_buffer_size: int, replay_start_size: int,
                  learning_rate: float, step_c: int, model_saving_period: int,
                  gamma: float, training_episodes: int, phi_channel: int, epsilon_max: float, epsilon_min: float,
@@ -222,7 +259,7 @@ class DQNAgent(Agent):
         self.value_function = DQNValueFunction(phi_channel, self.action_dim, learning_rate, gamma,
                                                model_saving_period, device, logger)
         self.exploration_method = DecayingEpsilonGreedy(epsilon_max, epsilon_min, exploration_steps)
-        self.memory = UniformExperienceReplay(replay_buffer_size)
+        self.memory = DQNExperienceReplay(replay_buffer_size, phi_channel)
         self.perception_mapping = DQNPerceptionMapping(phi_channel, screen_size)
         self.reward_shaping = DQNAtariReward()
         self.device = device

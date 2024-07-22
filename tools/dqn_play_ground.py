@@ -22,30 +22,31 @@ class DQNPlayGround:
             done = truncated = run_test = False
             step_i = reward_cumulated = 0
             # perception mapping
-            obs = self.agent.perception_mapping(state, step_i)
+
             no_op_steps = np.random.randint(self.cfg['no_op_max'])
             while not (done or truncated):
                 # no op for the first few steps and then select action by epsilon greedy or other exploration methods
+                obs = self.agent.perception_mapping(state, step_i)
                 if step_i >= no_op_steps:
                     if len(self.agent.memory) > self.cfg['replay_start_size']:
                         action = self.agent.select_action(obs)
                     else:
                         action = self.agent.select_action(obs, RandomAction())
                 else:
-                    action = 0 # no op
+                    action = 0  # no op
                 # environment step
                 next_state, reward_raw, done, truncated, inf = self.env.step(action)
 
                 # reward shaping
                 reward = self.agent.reward_shaping(reward_raw)
                 # perception mapping next state
-                next_obs = self.agent.perception_mapping(next_state, step_i)
+                # next_obs = self.agent.perception_mapping(next_state, step_i)
                 # store the transition
-                self.agent.store(obs, action, reward, next_obs, done, truncated)
+                self.agent.store(state, action, reward, next_state, done, truncated)
                 # train the agent 1 step
                 self.agent.train_one_step()
                 # update the state
-                obs = next_obs
+                state = next_state
                 # update the reward cumulated in the episode
                 reward_cumulated += reward_raw
                 # debug

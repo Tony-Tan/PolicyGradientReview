@@ -14,22 +14,6 @@ class UniformExperienceReplay(ExperienceReplay):
         return self.get_items(idx)
 
 
-# class UniformExperienceReplayMP(SharedExperience):
-#     """
-#     Shared memory implementation of the Uniform Experience Replay buffer.
-#     """
-#
-#     def __init__(self, capacity: int, obs_shape: np.shape, action_shape: np.shape):
-#         super(UniformExperienceReplayMP, self).__init__(capacity, obs_shape, action_shape)
-#
-#
-#     def store(self, observation: np.ndarray, action: np.ndarray, reward: np.ndarray,
-#               next_observation: np.ndarray, done: np.ndarray, truncated: np.ndarray):
-#         super(UniformExperienceReplayMP, self).store(observation, action, reward, next_observation, done, truncated)
-#
-#     def sample(self, batch_size: int = 0 ):
-#         return self.get_items()
-
 class UniformExperienceReplayMP(ShareMemory):
     def __init__(self, capacity: int, manager: mp.Manager):
         super(UniformExperienceReplayMP, self).__init__(capacity, manager)
