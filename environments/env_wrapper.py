@@ -76,8 +76,6 @@ class AtariEnv:
             if self.remove_flickering:
                 self.last_frame = state
             state, reward, done, trunc, info = self.env.step(action)
-            # cv2.imshow('raw_state', state)
-            # cv2.waitKey(0)
             if 'lives' in info.keys():
                 if info['lives'] < self.lives_counter:
                     self.lives_counter = info['lives']

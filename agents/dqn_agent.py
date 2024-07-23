@@ -217,11 +217,11 @@ class DQNExperienceReplay(UniformExperienceReplay):
         done = np.zeros(idx_size, dtype=np.float32)
         truncated = np.zeros(idx_size, dtype=np.float32)
         for i, idx_i in enumerate(idx):
-            _, a, r, _, d, t = self.buffer[idx_i - 1]
+            _, a, r, _, d, t = self.buffer[idx_i]
             # the observation is store from 0 to idx_size in obs_next_obs
-            obs[i] = np.array([self.buffer[j][0] for j in range(idx_i - self.phi_channel, idx_i)], dtype=np.float32)
+            obs[i] = np.array([self.buffer[j][0] for j in range(idx_i - self.phi_channel+1, idx_i+1)], dtype=np.float32)
             # the next observation is store from idx_size to -1 in obs_next_obs
-            next_obs[i] = np.array([self.buffer[j][3] for j in range(idx_i - self.phi_channel, idx_i)],
+            next_obs[i] = np.array([self.buffer[j][3] for j in range(idx_i - self.phi_channel+1, idx_i+1)],
                                    dtype=np.float32)
             action[i] = a
             reward[i] = r
@@ -238,8 +238,7 @@ class DQNExperienceReplay(UniformExperienceReplay):
         return obs, action, reward, next_obs, done, truncated
 
     def sample(self, batch_size: int):
-        idx = np.random.choice(np.arange(1, int(self.__len__() / self.phi_channel)),
-                               batch_size, replace=False) * self.phi_channel
+        idx = np.random.choice(np.arange(self.phi_channel, self.__len__()),  batch_size, replace=False)
         return self.get_items(idx)
 
 

@@ -21,12 +21,11 @@ class DQNPlayGround:
             state, info = self.env.reset()
             done = truncated = run_test = False
             step_i = reward_cumulated = 0
-            # perception mapping
-
             no_op_steps = np.random.randint(self.cfg['no_op_max'])
             while not (done or truncated):
-                # no op for the first few steps and then select action by epsilon greedy or other exploration methods
+                # perception mapping
                 obs = self.agent.perception_mapping(state, step_i)
+                # no op for the first few steps and then select action by epsilon greedy or other exploration methods
                 if step_i >= no_op_steps:
                     if len(self.agent.memory) > self.cfg['replay_start_size']:
                         action = self.agent.select_action(obs)
@@ -58,8 +57,9 @@ class DQNPlayGround:
                 # update the training step counter of the entire training process
                 training_steps += 1
                 # update the step counter of the current episode
-
                 step_i += 1
+                # cv2.imshow('state', state)
+                # cv2.waitKey(10)
             # log the training reward
             self.logger.tb_scalar('training reward', reward_cumulated, training_steps)
             if run_test:
