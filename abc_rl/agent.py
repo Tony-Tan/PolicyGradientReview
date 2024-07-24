@@ -22,5 +22,8 @@ class Agent(ABC):
     def train_one_step(self, **kwargs):
         ...
 
+    @abstractmethod
+    def save_model(self, **kwargs):
+        ...
 
 

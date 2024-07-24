@@ -202,6 +202,8 @@ class DQNValueFunction(ValueFunction):
             state_action_values = self.value_nn(obs_input).cpu().detach().numpy()
             return state_action_values
 
+    def save(self):
+        pass
 
 class DQNExperienceReplay(UniformExperienceReplay):
     def __init__(self, capacity: int, phi_channel: int):
@@ -317,3 +319,6 @@ class DQNAgent(Agent):
                 if self.logger:
                     self.logger.tb_scalar('loss', np.mean(loss), self.update_step)
                     self.logger.tb_scalar('q', np.mean(q), self.update_step)
+
+    def save_model(self):
+        pass

@@ -54,6 +54,7 @@ class DQNPlayGround:
                     # test the agent when the training steps reach the batch_num_per_epoch
                     run_test = True
                     epoch_i += 1
+
                 # update the training step counter of the entire training process
                 training_steps += 1
                 # update the step counter of the current episode
@@ -75,6 +76,8 @@ class DQNPlayGround:
                 # log the epsilon
                 self.logger.tb_scalar('epsilon', self.agent.exploration_method.epsilon, epoch_i)
                 self.logger.msg(f'{epoch_i} epsilon: ' + str(self.agent.exploration_method.epsilon))
+                if self.cfg['model_saving'] == 1:
+                    self.agent.save_model()
 
     def test(self, test_episode_num: int):
         """

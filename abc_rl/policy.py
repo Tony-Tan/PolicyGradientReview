@@ -37,6 +37,9 @@ class ValueFunction(ABC):
     def update(self,  *args, **kwargs):
         ...
 
+    @abstractmethod
+    def save(self, *args, **kwargs):
+        ...
 
 # class ModelBased(ABC):
 #     def __init__(self):
