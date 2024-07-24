@@ -2,7 +2,7 @@ import argparse
 from agents.dqn_pp_agent import *
 from environments.env_wrapper import AtariEnv
 from exploration.epsilon_greedy import *
-from utils.hyperparameters import Hyperparameters
+from utils.configurator import Configurator
 from tools.dqn_play_ground import DQNPlayGround
 
 # Argument parser for command line arguments
@@ -15,7 +15,7 @@ parser.add_argument('--log_path', default='../exps/dqn_pp/', type=str,
                     help='log save path，default: /exps/dqn_pp/')
 
 # Load hyperparameters from yaml file
-cfg = Hyperparameters(parser, '../configs/dqn_pp.yaml')
+cfg = Configurator(parser, '../configs/dqn_pp.yaml')
 
 
 def main():

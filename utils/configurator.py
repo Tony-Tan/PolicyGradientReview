@@ -2,6 +2,7 @@ import os
 import yaml
 import pprint
 from argparse import ArgumentParser
+from datetime import datetime
 
 
 def load_config(yaml_file):
@@ -9,19 +10,18 @@ def load_config(yaml_file):
         return yaml.safe_load(file)
 
 
-
-
-class Hyperparameters:
+class Configurator:
     def __init__(self, args: ArgumentParser, config_file: str) -> None:
         assert os.path.exists(config_file)
         assert isinstance(args, ArgumentParser)
         self.config = load_config(config_file)
-
         for key, value in vars(args.parse_args()).items():
             if value is not None:
                 self.config[key] = value
             if key not in self.config.keys():
                 self.config[key] = value
+        self.config['exp_name'] = (self.config['env_name'].replace('/', '-') +
+                                   f"_{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}")
 
     def __getitem__(self, item):
         return self.config[item]

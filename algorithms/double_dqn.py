@@ -7,7 +7,7 @@ import copy
 import cv2
 from tqdm import tqdm
 from multiprocessing import Process, Queue, set_start_method
-from utils.hyperparameters import Hyperparameters
+from utils.configurator import Configurator
 
 # Argument parser for command line arguments
 parser = argparse.ArgumentParser(description='PyTorch Double DQN training arguments')
@@ -19,7 +19,7 @@ parser.add_argument('--log_path', default='../exps/double_dqn/', type=str,
                     help='log save path，default: ./log/')
 
 # Load hyperparameters from yaml file and combine with command line arguments
-cfg = Hyperparameters(parser, '../configs/double_dqn.yaml')
+cfg = Configurator(parser, '../configs/double_dqn.yaml')
 
 
 def main():

@@ -3,7 +3,7 @@ from agents.dueling_dqn_agent import *
 from environments.env_wrapper import AtariEnv
 from exploration.epsilon_greedy import *
 from tools.dqn_play_ground import DQNPlayGround
-from utils.hyperparameters import Hyperparameters
+from utils.configurator import Configurator
 
 # Argument parser for command line arguments
 parser = argparse.ArgumentParser(description='PyTorch Dueling DQN training arguments')
@@ -15,7 +15,7 @@ parser.add_argument('--log_path', default='../exps/dueling_dqn/', type=str,
                     help='log save path，default: ./log/')
 
 # Load hyperparameters from yaml file
-cfg = Hyperparameters(parser, '../configs/dqn.yaml')
+cfg = Configurator(parser, '../configs/dqn.yaml')
 
 
 

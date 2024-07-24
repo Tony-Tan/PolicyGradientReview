@@ -37,19 +37,19 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 class Logger:
-    def __init__(self, log_name: str, log_path: str = './', print_in_terminal: bool = True):
+    def __init__(self,  log_path: str, exp_name: str, print_in_terminal: bool = True):
         if not os.path.exists(log_path):
             os.makedirs(log_path)
-        self.log_name = log_name.replace('/', '-')+f"_{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}"
+        self.exp_name = exp_name
         self.log_path = log_path
         self.print_in_terminal = print_in_terminal
-        self.log_file_name = f"{self.log_name}.log"
+        self.log_file_name = f"{self.exp_name}.log"
         self.log_file_path = os.path.join(self.log_path, self.log_file_name)
         self.tb_writer = None
 
     def get_tb_writer(self):
         if self.tb_writer is None:
-            self.tb_writer = SummaryWriter(log_dir=os.path.join(self.log_path, self.log_name))
+            self.tb_writer = SummaryWriter(log_dir=os.path.join(self.log_path, self.exp_name))
         return self.tb_writer
 
     def tb_scalar(self, tag, scalar_value, global_step=None):

@@ -3,11 +3,11 @@ import cv2
 from agents.dqn_agent import *
 from abc_rl.experience_replay import *
 from abc_rl.exploration import *
-from utils.hyperparameters import *
+from utils.configurator import *
 
 
 class DQNPlayGround:
-    def __init__(self, agent: DQNAgent, env: AtariEnv, cfg: Hyperparameters, logger: Logger):
+    def __init__(self, agent: DQNAgent, env: AtariEnv, cfg: Configurator, logger: Logger):
         self.agent = agent
         self.env = env
         self.cfg = cfg
@@ -17,6 +17,7 @@ class DQNPlayGround:
         # training
         epoch_i = 0
         training_steps = 0
+        best_reward = -np.inf
         while training_steps < self.cfg['training_steps']:
             state, info = self.env.reset()
             done = truncated = run_test = False
@@ -76,8 +77,11 @@ class DQNPlayGround:
                 # log the epsilon
                 self.logger.tb_scalar('epsilon', self.agent.exploration_method.epsilon, epoch_i)
                 self.logger.msg(f'{epoch_i} epsilon: ' + str(self.agent.exploration_method.epsilon))
-                if self.cfg['model_saving'] == 1:
-                    self.agent.save_model()
+                if self.cfg['save_model']:
+                    if avg_reward > best_reward:
+                        best_reward = avg_reward
+                        self.agent.save_model(model_label='best')
+                    self.agent.save_model(model_label='last')
 
     def test(self, test_episode_num: int):
         """

@@ -105,7 +105,7 @@ class DQNPerceptionMapping(PerceptionMapping):
 #  Class for value function in DQN for Atari games.
 class DQNValueFunction(ValueFunction):
     def __init__(self, input_channel: int, action_dim: int, learning_rate: float,
-                 gamma: float, model_saving_period: int, device: torch.device, logger: Logger, ):
+                 gamma: float, model_save_path: str, device: torch.device, logger: Logger, ):
         super(DQNValueFunction, self).__init__()
         self.logger = logger
         # Define the value neural network and the target value neural network
@@ -115,12 +115,11 @@ class DQNValueFunction(ValueFunction):
 
         self.synchronize_value_nn()
         self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
-        # self.optimizer = torch.optim.RMSprop(self.value_nn.parameters(), lr=0.00025, alpha=0.95, momentum=0.95, eps=0.01)
         self.learning_rate = learning_rate
         self.gamma = gamma
         self.device = device
         self.update_step = 0
-        self.model_saving_period = model_saving_period
+        self.model_save_path = model_save_path
 
     # synchronize the target value neural network with the value neural network
     def synchronize_value_nn(self):
@@ -134,7 +133,7 @@ class DQNValueFunction(ValueFunction):
         return msv
 
     # Update the value function with the given samples
-    def update(self, samples: list, weight=None):
+    def update(self, samples: tuple, weight=None):
 
         """
         :param samples: Input samples
@@ -202,8 +201,9 @@ class DQNValueFunction(ValueFunction):
             state_action_values = self.value_nn(obs_input).cpu().detach().numpy()
             return state_action_values
 
-    def save(self):
-        pass
+    def save(self, model_label: str):
+        torch.save(self.value_nn.state_dict(), os.path.join(self.model_save_path, f'{model_label}.pth'))
+
 
 class DQNExperienceReplay(UniformExperienceReplay):
     def __init__(self, capacity: int, phi_channel: int):
@@ -221,9 +221,10 @@ class DQNExperienceReplay(UniformExperienceReplay):
         for i, idx_i in enumerate(idx):
             _, a, r, _, d, t = self.buffer[idx_i]
             # the observation is store from 0 to idx_size in obs_next_obs
-            obs[i] = np.array([self.buffer[j][0] for j in range(idx_i - self.phi_channel+1, idx_i+1)], dtype=np.float32)
+            obs[i] = np.array([self.buffer[j][0] for j in range(idx_i - self.phi_channel + 1, idx_i + 1)],
+                              dtype=np.float32)
             # the next observation is store from idx_size to -1 in obs_next_obs
-            next_obs[i] = np.array([self.buffer[j][3] for j in range(idx_i - self.phi_channel+1, idx_i+1)],
+            next_obs[i] = np.array([self.buffer[j][3] for j in range(idx_i - self.phi_channel + 1, idx_i + 1)],
                                    dtype=np.float32)
             action[i] = a
             reward[i] = r
@@ -240,7 +241,7 @@ class DQNExperienceReplay(UniformExperienceReplay):
         return obs, action, reward, next_obs, done, truncated
 
     def sample(self, batch_size: int):
-        idx = np.random.choice(np.arange(self.phi_channel, self.__len__()),  batch_size, replace=False)
+        idx = np.random.choice(np.arange(self.phi_channel, self.__len__()), batch_size, replace=False)
         return self.get_items(idx)
 
 
@@ -252,13 +253,13 @@ class DQNAgent(Agent):
 
     def __init__(self, screen_size: int, action_space,
                  mini_batch_size: int, replay_buffer_size: int, replay_start_size: int,
-                 learning_rate: float, step_c: int, model_saving_period: int,
-                 gamma: float, training_episodes: int, phi_channel: int, epsilon_max: float, epsilon_min: float,
-                 exploration_steps: int, device: torch.device, logger: Logger):
+                 learning_rate: float, step_c: int, gamma: float, training_episodes: int, phi_channel: int,
+                 epsilon_max: float, epsilon_min: float, exploration_steps: int, device: torch.device,
+                 exp_path: str, exp_name: str, logger: Logger):
         super(DQNAgent, self).__init__(logger)
         self.action_dim = action_space.n
         self.value_function = DQNValueFunction(phi_channel, self.action_dim, learning_rate, gamma,
-                                               model_saving_period, device, logger)
+                                               os.path.join(exp_path, exp_name), device, logger)
         self.exploration_method = DecayingEpsilonGreedy(epsilon_max, epsilon_min, exploration_steps)
         self.memory = DQNExperienceReplay(replay_buffer_size, phi_channel)
         self.perception_mapping = DQNPerceptionMapping(phi_channel, screen_size)
@@ -320,5 +321,5 @@ class DQNAgent(Agent):
                     self.logger.tb_scalar('loss', np.mean(loss), self.update_step)
                     self.logger.tb_scalar('q', np.mean(q), self.update_step)
 
-    def save_model(self):
-        pass
+    def save_model(self, model_label: str = 'last'):
+        self.value_function.save(model_label)

@@ -5,7 +5,7 @@ import random
 from agents.dqn_agent import *
 from environments.env_wrapper import AtariEnv
 from exploration.epsilon_greedy import *
-from utils.hyperparameters import Hyperparameters
+from utils.configurator import Configurator
 from tools.dqn_play_ground import DQNPlayGround
 import torch.multiprocessing as mp
 
@@ -22,7 +22,7 @@ parser.add_argument('--log_path', default='../exps/async_dqn/', type=str,
                     help='log save path，default: ../exps/async_dqn/')
 
 # Load hyperparameters from yaml file
-cfg = Hyperparameters(parser, '../configs/async_dqn.yaml')
+cfg = Configurator(parser, '../configs/async_dqn.yaml')
 
 
 def test(agent, test_episode_num: int):
@@ -105,7 +105,7 @@ def train_processor(rank: int, agent: AsyncDQNAgent, env: AtariEnv,
 
 
 class AsyncDQNPlayGround:
-    def __init__(self, agent: AsyncDQNAgent, env: list, cfg: Hyperparameters):
+    def __init__(self, agent: AsyncDQNAgent, env: list, cfg:Configurator):
         self.env_list = env
         self.agent = agent
         self.cfg = cfg
