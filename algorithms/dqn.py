@@ -11,18 +11,17 @@ parser.add_argument('--env_name', default='ALE/Seaquest-v5', type=str,
                     help='openai gym environment (default: ALE/Atlantis-v5)')
 parser.add_argument('--n_times', default=1, type=int,
                     help='how many times to run the experiment (default: 1)')
-parser.add_argument('--device', default='mps', type=str,
+parser.add_argument('--device', default='cuda:0', type=str,
                     help='calculation device default: cuda')
 parser.add_argument('--save_model', default=True, type=bool,
                     help='save model or not, default: True')
 parser.add_argument('--exp_path', default='../exps/dqn/', type=str,
                     help='exp save path，default: ../exps/dqn/')
 
-# Load hyperparameters from yaml file
-cfg = Configurator(parser, '../configs/dqn.yaml')
-
 
 def main():
+    # Load hyperparameters from yaml file
+    cfg = Configurator(parser, '../configs/dqn.yaml')
     logger = Logger(cfg['exp_path'], cfg['exp_name'])
     logger.msg('\nparameters:' + str(cfg))
     env = AtariEnv(cfg['env_name'], frame_skip=cfg['skip_k_frame'], logger=logger, screen_size=cfg['screen_size'],
@@ -37,5 +36,5 @@ def main():
 
 
 if __name__ == '__main__':
-    for i in range(cfg['n_times']):
+    for i in range(parser.parse_args().n_times):
         main()
