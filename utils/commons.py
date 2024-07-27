@@ -52,7 +52,7 @@ class Logger:
             self.tb_writer = SummaryWriter(log_dir=os.path.join(self.log_path, self.exp_name))
         return self.tb_writer
 
-    def tb_scalar(self, tag, scalar_value, global_step=None):
+    def tb_scalar(self, tag, scalar_value, global_step):
         """
         Logs a scalar variable to tensorboard
         :param tag: Name of the scalar
@@ -61,6 +61,10 @@ class Logger:
         """
         writer = self.get_tb_writer()
         writer.add_scalar(tag, scalar_value, global_step)
+
+    def tb_hparams(self, hparam_dict):
+        writer = self.get_tb_writer()
+        writer.add_hparams(hparam_dict, {})
 
     def __del__(self):
         if self.tb_writer:
