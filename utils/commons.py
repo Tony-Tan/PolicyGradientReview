@@ -64,7 +64,7 @@ class Logger:
 
     def tb_hparams(self, hparam_dict):
         writer = self.get_tb_writer()
-        writer.add_hparams(hparam_dict, {})
+        writer.add_hparams(hparam_dict, {'hparam/avg_reward':0, 'hparam/avg_step':0})
 
     def __del__(self):
         if self.tb_writer:

@@ -10,7 +10,7 @@
 # (https://github.com/Tony-Tan/Reinforcement-Learning-Data/tree/dev/exps/dqn)
 #
 # paper: [Human-level control through deep reinforcement learning](https://www.nature.com/articles/nature14236)
-
+import numpy as np
 import torch.optim
 import torch.nn.functional as F
 from collections import deque
@@ -277,8 +277,9 @@ class DQNAgent(Agent):
         :param exploration_method: Exploration method
         :return: Selected action
         """
+        value_array = None
         if isinstance(exploration_method, RandomAction):
-            return exploration_method(self.action_dim)
+            return exploration_method(self.action_dim), value_array
         else:
             phi_tensor = torch.as_tensor(obs, device=self.device, dtype=torch.float32)
             value_array = self.value_function.value(phi_tensor)[0]
