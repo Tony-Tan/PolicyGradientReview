@@ -29,9 +29,9 @@ class DQNPlayGround:
                 # no op for the first few steps and then select action by epsilon greedy or other exploration methods
                 if step_i >= no_op_steps:
                     if len(self.agent.memory) > self.cfg['replay_start_size']:
-                        action = self.agent.select_action(obs)
+                        action, _ = self.agent.select_action(obs)
                     else:
-                        action = self.agent.select_action(obs, RandomAction())
+                        action, _ = self.agent.select_action(obs, RandomAction())
                 else:
                     action = 0  # no op
                 # environment step
@@ -67,7 +67,7 @@ class DQNPlayGround:
             if run_test:
                 # test the agent
                 self.logger.msg(f'{epoch_i} test start:')
-                avg_reward, avg_steps = self.test(self.cfg['agent_test_episodes'])
+                avg_reward, avg_steps, avg_q = self.test(self.cfg['agent_test_episodes'])
                 # log the test reward
                 self.logger.tb_scalar('avg_reward', avg_reward, epoch_i)
                 self.logger.msg(f'{epoch_i} avg_reward: ' + str(avg_reward))
@@ -77,6 +77,9 @@ class DQNPlayGround:
                 # log the epsilon
                 self.logger.tb_scalar('epsilon', self.agent.exploration_method.epsilon, epoch_i)
                 self.logger.msg(f'{epoch_i} epsilon: ' + str(self.agent.exploration_method.epsilon))
+                # log the q
+                self.logger.tb_scalar('q', avg_q, epoch_i)
+                self.logger.msg(f'{epoch_i} q: ' + str(avg_q))
                 if self.cfg['save_model']:
                     if avg_reward > best_reward:
                         best_reward = avg_reward
@@ -94,16 +97,20 @@ class DQNPlayGround:
         exploration_method = EpsilonGreedy(self.cfg['epsilon_for_test'])
         reward_cum = 0
         step_cum = 0
+        value_array_sum = np.zeros(env.action_space.n)
         for i in range(test_episode_num):
             state, info = env.reset()
             done = truncated = False
             step_i = 0
             while not (done or truncated):
                 obs = self.agent.perception_mapping(state, step_i)
-                action = self.agent.select_action(obs, exploration_method)
+                action, value_array = self.agent.select_action(obs, exploration_method)
+                value_array_sum = value_array_sum + value_array
                 next_state, reward, done, truncated, inf = env.step(action)
                 reward_cum += reward
                 state = next_state
                 step_i += 1
             step_cum += step_i
-        return reward_cum / self.cfg['agent_test_episodes'], step_cum / self.cfg['agent_test_episodes']
+        return (reward_cum / self.cfg['agent_test_episodes'],
+                step_cum / self.cfg['agent_test_episodes'],
+                np.sum(value_array_sum)/(step_cum*len(value_array_sum)))

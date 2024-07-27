@@ -112,7 +112,6 @@ class DQNValueFunction(ValueFunction):
         self.value_nn = DQNAtari(input_channel, action_dim).to(device)
         self.target_value_nn = DQNAtari(input_channel, action_dim).to(device)
         self.target_value_nn.eval()
-
         self.synchronize_value_nn()
         self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
         self.learning_rate = learning_rate
@@ -181,8 +180,7 @@ class DQNValueFunction(ValueFunction):
         self.optimizer.step()
         self.update_step += 1
         # return the clipped difference and the q value
-        return (np.abs(diff_clipped.detach().cpu().numpy().astype(np.float32)),
-                q_value.detach().cpu().numpy().astype(np.float32))
+        return np.abs(diff_clipped.detach().cpu().numpy().astype(np.float32))
 
     # Calculate the value of the given phi tensor.
     def value(self, phi_tensor: torch.Tensor) -> np.ndarray:
@@ -272,7 +270,7 @@ class DQNAgent(Agent):
         self.step_c = step_c
 
     # Select an action based on the given observation and exploration method.
-    def select_action(self, obs: np.ndarray, exploration_method: Exploration = None) -> np.ndarray:
+    def select_action(self, obs: np.ndarray, exploration_method: Exploration = None) -> tuple:
         """
 
         :param obs: Input observation
@@ -283,11 +281,11 @@ class DQNAgent(Agent):
             return exploration_method(self.action_dim)
         else:
             phi_tensor = torch.as_tensor(obs, device=self.device, dtype=torch.float32)
-            value_list = self.value_function.value(phi_tensor)[0]
+            value_array = self.value_function.value(phi_tensor)[0]
             if exploration_method is None:
-                return self.exploration_method(value_list)
+                return self.exploration_method(value_array), value_array
             else:
-                return exploration_method(value_list)
+                return exploration_method(value_array), value_array
 
     # Store the agent environment interaction in the memory.
     def store(self, obs, action, reward, next_obs, done, truncated):
@@ -312,14 +310,13 @@ class DQNAgent(Agent):
 
         if len(self.memory) > self.replay_start_size:
             samples = self.memory.sample(self.mini_batch_size)
-            loss, q = self.value_function.update(samples)
+            loss = self.value_function.update(samples)
             self.update_step += 1
             # synchronize the target value neural network with the value neural network every step_c steps
             if self.update_step % self.step_c == 0:
                 self.value_function.synchronize_value_nn()
                 if self.logger:
                     self.logger.tb_scalar('loss', np.mean(loss), self.update_step)
-                    self.logger.tb_scalar('q', np.mean(q), self.update_step)
 
     def save_model(self, model_label: str = 'last'):
         self.value_function.save(model_label)
