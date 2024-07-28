@@ -62,9 +62,9 @@ class Logger:
         writer = self.get_tb_writer()
         writer.add_scalar(tag, scalar_value, global_step)
 
-    def tb_hparams(self, hparam_dict):
+    def tb_hparams(self, hparam_dict, metric_dict):
         writer = self.get_tb_writer()
-        writer.add_hparams(hparam_dict, {'hparam/avg_reward':0, 'hparam/avg_step':0})
+        writer.add_hparams(hparam_dict, metric_dict)
 
     def __del__(self):
         if self.tb_writer:

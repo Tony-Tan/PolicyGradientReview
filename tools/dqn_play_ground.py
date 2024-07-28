@@ -1,3 +1,5 @@
+import random
+
 import cv2
 
 from agents.dqn_agent import *
@@ -12,9 +14,42 @@ class DQNPlayGround:
         self.env = env
         self.cfg = cfg
         self.logger = logger
+        self.metric = {'last reward': 0, 'last steps': 0, 'max reward': 0, 'max steps': 0}
+        self.held_out_obs = []
+
+    def __del__(self):
+        self.logger.tb_hparams(self.cfg.config, self.metric)
+
+    def held_out_states_gen(self):
+        """
+        Generate held out states for testing the agent.
+        """
+        step_i = 0
+        state = self.env.reset()
+        for i in range(self.cfg['held_out_states_num']):
+            action = self.env.action_space.sample()  # 随机动作
+            next_state, reward, done, _ = self.env.step(action)
+            obs = self.agent.perception_mapping(state, step_i)
+            if np.random.rand() < 0.01:  # 1%的概率保留当前状态
+                self.held_out_obs.append(obs)
+            state = next_state
+            step_i += 1
+            if done:
+                state = self.env.reset()
+                step_i = 0
+
+    def validate_q(self):
+        """
+        Validate the q values of the agent.
+        """
+        q_values = []
+        for obs in self.held_out_obs:
+            q_values.append(np.max(self.agent.value_function(obs)))
+        return np.mean(np.array(q_values))
 
     def train(self):
         # training
+        self.held_out_states_gen()
         epoch_i = 0
         training_steps = 0
         best_reward = -np.inf
@@ -67,13 +102,20 @@ class DQNPlayGround:
             if run_test:
                 # test the agent
                 self.logger.msg(f'{epoch_i} test start:')
-                avg_reward, avg_steps, avg_q = self.test(self.cfg['agent_test_episodes'])
+                avg_reward, avg_steps = self.test(self.cfg['agent_test_episodes'])
+                avg_q = self.validate_q()
                 # log the test reward
                 self.logger.tb_scalar('avg_reward', avg_reward, epoch_i)
                 self.logger.msg(f'{epoch_i} avg_reward: ' + str(avg_reward))
+                self.metric['last reward'] = avg_reward
+                if avg_reward > self.metric['max reward']:
+                    self.metric['max reward'] = avg_reward
                 # log the test steps
                 self.logger.tb_scalar('avg_steps', avg_steps, epoch_i)
                 self.logger.msg(f'{epoch_i} avg_steps: ' + str(avg_steps))
+                self.metric['last steps'] = avg_steps
+                if avg_steps > self.metric['max steps']:
+                    self.metric['max steps'] = avg_steps
                 # log the epsilon
                 self.logger.tb_scalar('epsilon', self.agent.exploration_method.epsilon, epoch_i)
                 self.logger.msg(f'{epoch_i} epsilon: ' + str(self.agent.exploration_method.epsilon))
@@ -97,20 +139,17 @@ class DQNPlayGround:
         exploration_method = EpsilonGreedy(self.cfg['epsilon_for_test'])
         reward_cum = 0
         step_cum = 0
-        value_array_sum = np.zeros(env.action_space.n)
         for i in range(test_episode_num):
             state, info = env.reset()
             done = truncated = False
             step_i = 0
             while not (done or truncated):
                 obs = self.agent.perception_mapping(state, step_i)
-                action, value_array = self.agent.select_action(obs, exploration_method)
-                value_array_sum = value_array_sum + value_array
+                action, _ = self.agent.select_action(obs, exploration_method)
                 next_state, reward, done, truncated, inf = env.step(action)
                 reward_cum += reward
                 state = next_state
                 step_i += 1
             step_cum += step_i
         return (reward_cum / self.cfg['agent_test_episodes'],
-                step_cum / self.cfg['agent_test_episodes'],
-                np.sum(value_array_sum)/(step_cum*len(value_array_sum)))
+                step_cum / self.cfg['agent_test_episodes'])

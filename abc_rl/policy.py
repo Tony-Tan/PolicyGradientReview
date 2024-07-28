@@ -30,7 +30,7 @@ class ValueFunction(ABC):
         ...
 
     @abstractmethod
-    def value(self, **kwargs) -> np.ndarray:
+    def __call__(self, **kwargs) -> np.ndarray:
         ...
 
     @abstractmethod

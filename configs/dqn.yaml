@@ -17,3 +17,4 @@ epsilon_min: 0.1
 exploration_steps: 1_000_000
 epsilon_for_test: 0.05
 agent_test_episodes: 20
+held_out_states_num: 1000

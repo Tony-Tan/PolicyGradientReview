@@ -24,7 +24,7 @@ def main():
     cfg = Configurator(parser, '../configs/dqn.yaml')
     logger = Logger(cfg['exp_path'], cfg['exp_name'])
     logger.msg('\nparameters:' + str(cfg))
-    logger.tb_hparams(cfg.config)
+
     env = AtariEnv(cfg['env_name'], frame_skip=cfg['skip_k_frame'], logger=logger, screen_size=cfg['screen_size'],
                    remove_flickering=True)
     dqn_agent = DQNAgent(cfg['screen_size'], env.action_space, cfg['mini_batch_size'],
@@ -34,6 +34,7 @@ def main():
                          cfg['exp_path'], cfg['exp_name'], logger)
     dqn_pg = DQNPlayGround(dqn_agent, env, cfg, logger)
     dqn_pg.train()
+    logger.tb_hparams(cfg.config, dqn_pg.metric)
 
 
 if __name__ == '__main__':

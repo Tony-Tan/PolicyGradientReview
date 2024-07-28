@@ -183,7 +183,7 @@ class DQNValueFunction(ValueFunction):
         return np.abs(diff_clipped.detach().cpu().numpy().astype(np.float32))
 
     # Calculate the value of the given phi tensor.
-    def value(self, phi_tensor: torch.Tensor) -> np.ndarray:
+    def __call__(self, phi_tensor: torch.Tensor) -> np.ndarray:
         """
 
         :param phi_tensor: Input phi tensor
@@ -282,7 +282,7 @@ class DQNAgent(Agent):
             return exploration_method(self.action_dim), value_array
         else:
             phi_tensor = torch.as_tensor(obs, device=self.device, dtype=torch.float32)
-            value_array = self.value_function.value(phi_tensor)[0]
+            value_array = self.value_function(phi_tensor)[0]
             if exploration_method is None:
                 return self.exploration_method(value_array), value_array
             else:
