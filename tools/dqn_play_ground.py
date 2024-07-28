@@ -25,27 +25,29 @@ class DQNPlayGround:
         Generate held out states for testing the agent.
         """
         step_i = 0
-        state = self.env.reset()
-        for i in range(self.cfg['held_out_states_num']):
+        state, _ = self.env.reset()
+        while len(self.held_out_obs) < self.cfg['held_out_states_num']:
             action = self.env.action_space.sample()  # 随机动作
-            next_state, reward, done, _ = self.env.step(action)
+            next_state, r, d, t, _ = self.env.step(action)
             obs = self.agent.perception_mapping(state, step_i)
             if np.random.rand() < 0.01:  # 1%的概率保留当前状态
                 self.held_out_obs.append(obs)
             state = next_state
             step_i += 1
-            if done:
-                state = self.env.reset()
+            if d:
+                state, _ = self.env.reset()
                 step_i = 0
+        self.held_out_obs = np.arange(self.held_out_obs, dtype=np.float32)
 
     def validate_q(self):
         """
         Validate the q values of the agent.
         """
-        q_values = []
-        for obs in self.held_out_obs:
-            q_values.append(np.max(self.agent.value_function(obs)))
-        return np.mean(np.array(q_values))
+        max_q_array = None
+        with torch.no_grad():
+            max_q_array_ = np.max(self.agent.value_function(
+                torch.as_tensor(self.held_out_obs, dtype=torch.float32).to(self.agent.device)),axis=1)
+        return np.mean(np.array(max_q_array_))
 
     def train(self):
         # training
