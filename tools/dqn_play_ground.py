@@ -37,7 +37,7 @@ class DQNPlayGround:
             if d:
                 state, _ = self.env.reset()
                 step_i = 0
-        self.held_out_obs = np.arange(self.held_out_obs, dtype=np.float32)
+        self.held_out_obs = np.array(self.held_out_obs, dtype=np.float32)
 
     def validate_q(self):
         """
