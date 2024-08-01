@@ -170,7 +170,6 @@ class DQNValueFunction(ValueFunction):
         # in [prioritized experience replay]() algorithm, weight is used to adjust the importance of the samples
         diff = obs_action_value - q_value
         if weight is not None:
-
             weight = torch.as_tensor(weight, device=self.device, dtype=torch.float32).resize_as_(diff)
             diff_clipped = torch.clip(diff, -1, 1) * weight
         else:
@@ -180,7 +179,7 @@ class DQNValueFunction(ValueFunction):
         self.optimizer.step()
         self.update_step += 1
         # return the clipped difference and the q value
-        return np.abs(diff_clipped.detach().cpu().numpy().astype(np.float32))
+        return loss.detach().cpu().numpy().astype(np.float32)
 
     # Calculate the value of the given phi tensor.
     def __call__(self, phi_tensor: torch.Tensor) -> np.ndarray:
@@ -202,6 +201,10 @@ class DQNValueFunction(ValueFunction):
     def save(self, model_label: str):
         torch.save(self.value_nn.state_dict(), os.path.join(self.model_save_path, f'{model_label}.pth'))
 
+    def load(self, model_label: str):
+        self.value_nn.load_state_dict(torch.load(model_label))
+
+
 
 class DQNExperienceReplay(UniformExperienceReplay):
     def __init__(self, capacity: int, phi_channel: int):
@@ -210,32 +213,32 @@ class DQNExperienceReplay(UniformExperienceReplay):
 
     def get_items(self, idx):
         idx_size = len(idx)
-        obs = np.zeros((idx_size, self.phi_channel, *self.buffer[0][0].shape), dtype=np.float32)
-        next_obs = np.zeros((idx_size, self.phi_channel, *self.buffer[0][0].shape), dtype=np.float32)
+        obs_shape = self.buffer[0][0].shape
+        obs = np.zeros((idx_size, self.phi_channel, *obs_shape), dtype=np.float32)
+        next_obs = np.zeros((idx_size, self.phi_channel, *obs_shape), dtype=np.float32)
         action = np.zeros(idx_size, dtype=np.float32)
         reward = np.zeros(idx_size, dtype=np.float32)
         done = np.zeros(idx_size, dtype=np.float32)
         truncated = np.zeros(idx_size, dtype=np.float32)
+
         for i, idx_i in enumerate(idx):
-            _, a, r, _, d, t = self.buffer[idx_i]
-            # the observation is store from 0 to idx_size in obs_next_obs
-            obs[i] = np.array([self.buffer[j][0] for j in range(idx_i - self.phi_channel + 1, idx_i + 1)],
-                              dtype=np.float32)
-            # the next observation is store from idx_size to -1 in obs_next_obs
-            next_obs[i] = np.array([self.buffer[j][3] for j in range(idx_i - self.phi_channel + 1, idx_i + 1)],
-                                   dtype=np.float32)
+            buffer_slice = self.buffer[idx_i - self.phi_channel + 1:idx_i + 1]
+            obs[i] = np.array([buf[0] for buf in buffer_slice], dtype=np.float32)
+            next_obs[i] = np.array([buf[3] for buf in buffer_slice], dtype=np.float32)
+
+            _, a, r, _, d, t = buffer_slice[-1]
             action[i] = a
             reward[i] = r
-            # the truncated is store from 0 to idx_size in done_truncated
             done[i] = d
-            # the truncated is store from idx_size to -1 in done_truncated
             truncated[i] = t
+
         obs = torch.from_numpy(obs)
         next_obs = torch.from_numpy(next_obs)
         action = torch.from_numpy(action)
         reward = torch.from_numpy(reward)
         done = torch.from_numpy(done)
         truncated = torch.from_numpy(truncated)
+
         return obs, action, reward, next_obs, done, truncated
 
     def sample(self, batch_size: int):
@@ -278,15 +281,15 @@ class DQNAgent(Agent):
         :return: Selected action
         """
         value_array = None
-        if isinstance(exploration_method, RandomAction):
-            return exploration_method(self.action_dim), value_array
+        # if isinstance(exploration_method, RandomAction):
+        #     return exploration_method(self.action_dim), value_array
+        # else:
+        phi_tensor = torch.as_tensor(obs, device=self.device, dtype=torch.float32)
+        value_array = self.value_function(phi_tensor)[0]
+        if exploration_method is None:
+            return self.exploration_method(value_array), value_array
         else:
-            phi_tensor = torch.as_tensor(obs, device=self.device, dtype=torch.float32)
-            value_array = self.value_function(phi_tensor)[0]
-            if exploration_method is None:
-                return self.exploration_method(value_array), value_array
-            else:
-                return exploration_method(value_array), value_array
+            return exploration_method(value_array), value_array
 
     # Store the agent environment interaction in the memory.
     def store(self, obs, action, reward, next_obs, done, truncated):
@@ -321,3 +324,6 @@ class DQNAgent(Agent):
 
     def save_model(self, model_label: str = 'last'):
         self.value_function.save(model_label)
+
+    def load_model(self, model_path:str):
+        self.value_function.load(model_path)

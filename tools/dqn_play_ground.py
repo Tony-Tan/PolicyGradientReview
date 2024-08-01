@@ -68,7 +68,7 @@ class DQNPlayGround:
                     if len(self.agent.memory) > self.cfg['replay_start_size']:
                         action, _ = self.agent.select_action(obs)
                     else:
-                        action, _ = self.agent.select_action(obs, RandomAction())
+                        action = self.env.action_space.sample()
                 else:
                     action = 0  # no op
                 # environment step

@@ -37,6 +37,7 @@ class AtariEnv:
                 self.scale_state = kwargs['scale_state'] if 'scale_state' in kwargs.keys() else False
                 self.remove_flickering = kwargs['remove_flickering'] if 'remove_flickering' in kwargs.keys() else True
                 self.last_frame = None
+                self.raw_state = None
                 self.lives_counter = 0
                 self.env_type = 'Atari'
                 self.action_space = self.env.action_space
@@ -54,6 +55,7 @@ class AtariEnv:
     def reset(self):
         """Implement the `reset` method that initializes the environment to its initial state"""
         state, info = self.env.reset()
+        self.raw_state = state
         if 'lives' in info.keys():
             self.lives_counter = info['lives']
         if self.remove_flickering:
@@ -76,6 +78,7 @@ class AtariEnv:
             if self.remove_flickering:
                 self.last_frame = state
             state, reward, done, trunc, info = self.env.step(action)
+            self.raw_state = state
             if 'lives' in info.keys():
                 if info['lives'] < self.lives_counter:
                     self.lives_counter = info['lives']
@@ -103,7 +106,7 @@ class AtariEnv:
         """
         Include a `render` method for visualizing the environment's current state.
         """
-        pass
+        return self.raw_state
 
 
 if __name__ == '__main__':

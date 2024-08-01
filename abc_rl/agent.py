@@ -26,4 +26,7 @@ class Agent(ABC):
     def save_model(self, **kwargs):
         ...
 
+    @abstractmethod
+    def load_model(self, **kwargs):
+        ...
 
