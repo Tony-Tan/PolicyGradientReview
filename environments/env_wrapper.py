@@ -72,11 +72,8 @@ class AtariEnv:
 
     def step(self, action):
         reward_cum = 0
-        state = self.last_frame
-        done = trunc = info = None
+        state = done = trunc = info = None
         for i in range(self.frame_skip):
-            if self.remove_flickering:
-                self.last_frame = state
             state, reward, done, trunc, info = self.env.step(action)
             self.raw_state = state
             if 'lives' in info.keys():
@@ -91,7 +88,9 @@ class AtariEnv:
             if done or trunc:
                 break
         if self.remove_flickering:
+            state_temp = state
             state = np.maximum(state, self.last_frame)
+            self.last_frame = state_temp
         if self.gray_state_Y:
             state = cv2.cvtColor(state, cv2.COLOR_BGR2YUV)[:, :, 0]
             # state = cv2.cvtColor(state, cv2.COLOR_BGR2GRAY)
