@@ -29,7 +29,10 @@ class AtariEnv:
         if env_id in gym.envs.registry.keys():
             if 'ALE' in env_id:
                 self.env_id = env_id
-                self.env = gym.make(env_id, repeat_action_probability=0.0, frameskip=1, render_mode=None)
+                try:
+                    self.env = gym.make(env_id, repeat_action_probability=0.0, frameskip=1, render_mode=None)
+                except gym.error.Error as e:
+                    raise EnvError(f"Failed to create environment: {str(e)}")
                 self.screen_size = kwargs['screen_size'] if 'screen_size' in kwargs.keys() else None
                 self.logger = kwargs['logger'] if 'logger' in kwargs.keys() else None
                 self.frame_skip = kwargs['frame_skip'] if 'frame_skip' in kwargs.keys() else 1
@@ -38,7 +41,7 @@ class AtariEnv:
                 self.remove_flickering = kwargs['remove_flickering'] if 'remove_flickering' in kwargs.keys() else True
                 self.last_frame = None
                 self.raw_state = None
-                self.lives_counter = 0
+                # self.lives_counter = 0
                 self.env_type = 'Atari'
                 self.action_space = self.env.action_space
                 self.state_space = self.env.observation_space
@@ -51,23 +54,26 @@ class AtariEnv:
 
         # self.logger('EnvWrapper init: {env_id} from {env_type} had be built'.
         #             format(env_id=self.env_id, env_type=self.env_type))
+    def __process_frame(self, frame):
+
+        if self.gray_state_Y:
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2YUV)[:, :, 0]
+            # state = cv2.cvtColor(state, cv2.COLOR_BGR2GRAY)
+        if self.screen_size:
+            frame = cv2.resize(frame, [self.screen_size, self.screen_size], cv2.INTER_NEAREST)
+        if self.scale_state:
+            frame = frame / 255.
+        return frame
 
     def reset(self):
         """Implement the `reset` method that initializes the environment to its initial state"""
         state, info = self.env.reset()
         self.raw_state = state
-        if 'lives' in info.keys():
-            self.lives_counter = info['lives']
+        # if 'lives' in info.keys():
+        #     self.lives_counter = info['lives']
         if self.remove_flickering:
             self.last_frame = state
-        if self.gray_state_Y:
-            state = cv2.cvtColor(state, cv2.COLOR_BGR2YUV)[:, :, 0]
-            # state = cv2.cvtColor(state, cv2.COLOR_BGR2GRAY)
-        if self.screen_size:
-            state = cv2.resize(state, [self.screen_size, self.screen_size], cv2.INTER_NEAREST)
-
-        if self.scale_state:
-            state = state/255.
+        state = self.__process_frame(state)
         return state, info
 
     def step(self, action):
@@ -75,15 +81,16 @@ class AtariEnv:
         state = done = trunc = info = None
         for i in range(self.frame_skip):
             state, reward, done, trunc, info = self.env.step(action)
+            # for display
             self.raw_state = state
-            if 'lives' in info.keys():
-                if info['lives'] < self.lives_counter:
-                    self.lives_counter = info['lives']
-                    reward_cum = -1
-                    break
-                elif info['lives'] > self.lives_counter:
-                    self.lives_counter = info['lives']
-                    reward = +1
+            # if 'lives' in info.keys():
+            #     if info['lives'] < self.lives_counter:
+            #         self.lives_counter = info['lives']
+            #         reward_cum = -1
+            #         break
+            #     elif info['lives'] > self.lives_counter:
+            #         self.lives_counter = info['lives']
+            #         reward = +1
             reward_cum += reward
             if done or trunc:
                 break
@@ -91,14 +98,7 @@ class AtariEnv:
             state_temp = state
             state = np.maximum(state, self.last_frame)
             self.last_frame = state_temp
-        if self.gray_state_Y:
-            state = cv2.cvtColor(state, cv2.COLOR_BGR2YUV)[:, :, 0]
-            # state = cv2.cvtColor(state, cv2.COLOR_BGR2GRAY)
-        if self.screen_size:
-            state = cv2.resize(state, [self.screen_size, self.screen_size], cv2.INTER_NEAREST)
-
-        if self.scale_state:
-            state = state / 255.
+        state = self.__process_frame(state)
         return state, reward_cum, done, trunc, info
 
     def render(self):

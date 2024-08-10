@@ -205,7 +205,6 @@ class DQNValueFunction(ValueFunction):
         self.value_nn.load_state_dict(torch.load(model_label))
 
 
-
 class DQNExperienceReplay(UniformExperienceReplay):
     def __init__(self, capacity: int, phi_channel: int):
         super(DQNExperienceReplay, self).__init__(capacity)
