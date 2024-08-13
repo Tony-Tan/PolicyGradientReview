@@ -137,7 +137,7 @@ class DQNPlayGround:
         :return: The average reward and average steps per episode
         """
         env = AtariEnv(self.cfg['env_name'], frame_skip=self.cfg['skip_k_frame'], screen_size=self.cfg['screen_size'],
-                       remove_flickering=False)
+                       remove_flickering=True)
         exploration_method = EpsilonGreedy(self.cfg['epsilon_for_test'])
         reward_cum = 0
         step_cum = 0

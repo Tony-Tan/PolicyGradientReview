@@ -57,10 +57,10 @@ class AtariEnv:
     def __process_frame(self, frame):
 
         if self.gray_state_Y:
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2YUV)[:, :, 0]
-            # state = cv2.cvtColor(state, cv2.COLOR_BGR2GRAY)
+            # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2YUV)[:, :, 0]
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         if self.screen_size:
-            frame = cv2.resize(frame, [self.screen_size, self.screen_size], cv2.INTER_NEAREST)
+            frame = cv2.resize(frame, [self.screen_size, self.screen_size], interpolation=cv2.INTER_AREA)
         if self.scale_state:
             frame = frame / 255.
         return frame
@@ -69,8 +69,8 @@ class AtariEnv:
         """Implement the `reset` method that initializes the environment to its initial state"""
         state, info = self.env.reset()
         self.raw_state = state
-        # if 'lives' in info.keys():
-        #     self.lives_counter = info['lives']
+        if 'lives' in info.keys():
+            self.lives_counter = info['lives']
         if self.remove_flickering:
             self.last_frame = state
         state = self.__process_frame(state)
@@ -79,26 +79,32 @@ class AtariEnv:
     def step(self, action):
         reward_cum = 0
         state = done = trunc = info = None
+        state_temp = self.last_frame
         for i in range(self.frame_skip):
             state, reward, done, trunc, info = self.env.step(action)
             # for display
             self.raw_state = state
-            # if 'lives' in info.keys():
-            #     if info['lives'] < self.lives_counter:
-            #         self.lives_counter = info['lives']
-            #         reward_cum = -1
-            #         break
-            #     elif info['lives'] > self.lives_counter:
-            #         self.lives_counter = info['lives']
-            #         reward = +1
+            if self.remove_flickering:
+                state_temp = np.maximum(state_temp, state)
+                # cv2.imshow('temp', np.hstack([state,state_temp]))
+                # cv2.waitKey(0)
+            if 'lives' in info.keys():
+                if info['lives'] < self.lives_counter:
+                    self.lives_counter = info['lives']
+                    reward_cum = -1
+                    break
+                elif info['lives'] > self.lives_counter:
+                    self.lives_counter = info['lives']
+                    reward = +1
             reward_cum += reward
             if done or trunc:
                 break
-        if self.remove_flickering:
-            state_temp = state
-            state = np.maximum(state, self.last_frame)
-            self.last_frame = state_temp
-        state = self.__process_frame(state)
+        # if self.remove_flickering:
+        #     state_temp = state
+        #     state = np.maximum(state, self.last_frame)
+        #     self.last_frame = state_temp
+        self.last_frame = state
+        state = self.__process_frame(state_temp)
         return state, reward_cum, done, trunc, info
 
     def render(self):

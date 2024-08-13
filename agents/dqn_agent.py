@@ -11,6 +11,7 @@
 #
 # paper: [Human-level control through deep reinforcement learning](https://www.nature.com/articles/nature14236)
 import numpy as np
+import random
 import torch.optim
 import torch.nn.functional as F
 from collections import deque
@@ -241,7 +242,7 @@ class DQNExperienceReplay(UniformExperienceReplay):
         return obs, action, reward, next_obs, done, truncated
 
     def sample(self, batch_size: int):
-        idx = np.random.choice(np.arange(self.phi_channel, self.__len__()), batch_size, replace=False)
+        idx = [random.randint(self.phi_channel-1,self.__len__()-1) for _ in range(batch_size)]  #np.random.choice(np.arange(self.phi_channel, self.__len__()), batch_size, replace=False)
         return self.get_items(idx)
 
 

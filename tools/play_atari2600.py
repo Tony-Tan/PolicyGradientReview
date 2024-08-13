@@ -7,14 +7,14 @@ from abc_rl.exploration import *
 from utils.configurator import *
 
 parser = argparse.ArgumentParser(description='DQN Play Atari 2600')
-parser.add_argument('--env_name', default='ALE/Seaquest-v5', type=str,
+parser.add_argument('--env_name', default='ALE/SpaceInvaders-v5', type=str,
                     help='openai gym environment (default: ALE/Atlantis-v5)')
 parser.add_argument('--device', default='cuda:0', type=str,
                     help='calculation device default: cuda')
 parser.add_argument('--model_path',
-                    default='../exps/dqn/ALE-Seaquest-v5_2024-07-31-10-33-03/best.pth', type=str,
+                    default='../exps/dqn/ALE-SpaceInvaders-v5_2024-08-12-20-35-14/best.pth', type=str,
                     help='exp save path，default: ../exps/dqn/')
-parser.add_argument('--epsilon_for_test', default='0.01', type=float,
+parser.add_argument('--epsilon_for_test', default='0.05', type=float,
                     help='epsilon greedy for testing:')
 cfg = Configurator(parser, '../configs/dqn.yaml')
 args = parser.parse_args()
@@ -36,7 +36,8 @@ while True:
     step_i = 0
     while not (done or truncated):
         state_show = cv2.cvtColor(env.render(), cv2.cv2.COLOR_BGR2RGB)
-        cv2.imshow(args.env_name, cv2.resize(state_show,[state.shape[1]*5, state.shape[0]*5]))
+        cv2.imshow(args.env_name, cv2.resize(state_show, [state_show.shape[1]*5, state_show.shape[0]*5]))
+        cv2.imshow('state', cv2.resize(state, [state.shape[1] * 5, state.shape[0] * 5], interpolation=cv2.INTER_NEAREST))
         cv2.waitKey(16)
         obs = dqn_agent.perception_mapping(state, step_i)
         action, _ = dqn_agent.select_action(obs, exploration_method)
