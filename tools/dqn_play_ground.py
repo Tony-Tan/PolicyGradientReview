@@ -46,7 +46,7 @@ class DQNPlayGround:
         max_q_array = None
         with torch.no_grad():
             max_q_array_ = np.max(self.agent.value_function(
-                torch.as_tensor(self.held_out_obs, dtype=torch.float32).to(self.agent.device)),axis=1)
+                torch.as_tensor(self.held_out_obs, dtype=torch.float32).to(self.agent.device)), axis=1)
         return np.mean(np.array(max_q_array_))
 
     def train(self):
@@ -54,21 +54,25 @@ class DQNPlayGround:
         self.held_out_states_gen()
         epoch_i = 0
         training_steps = 0
+        # record
         best_reward = -np.inf
         while training_steps < self.cfg['training_steps']:
             state, info = self.env.reset()
             done = truncated = run_test = False
             step_i = reward_cumulated = 0
             no_op_steps = np.random.randint(self.cfg['no_op_max'])
+            action = self.env.action_space.sample()
             while not (done or truncated):
                 # perception mapping
                 obs = self.agent.perception_mapping(state, step_i)
                 # no op for the first few steps and then select action by epsilon greedy or other exploration methods
                 if step_i >= no_op_steps:
-                    if len(self.agent.memory) > self.cfg['replay_start_size']:
-                        action, _ = self.agent.select_action(obs)
-                    else:
-                        action = self.env.action_space.sample()
+                    if step_i % self.cfg['skip_k_frame'] == 0:
+                        if len(self.agent.memory) > self.cfg['replay_start_size']:
+                            action, _ = self.agent.select_action(obs)
+                        else:
+                            # random action
+                            action = self.env.action_space.sample()
                 else:
                     action = 0  # no op
                 # environment step

@@ -4,6 +4,17 @@ import torch
 import torch.multiprocessing as mp
 
 
+def cvt2tensor(obs: np.ndarray, action:np.ndarray, reward:np.ndarray,
+                   next_obs: np.ndarray, done:np.ndarray, trunc:np.ndarray):
+    obs = torch.from_numpy(obs)
+    next_obs = torch.from_numpy(next_obs)
+    action = torch.from_numpy(action)
+    reward = torch.from_numpy(reward)
+    done = torch.from_numpy(done)
+    trunc = torch.from_numpy(trunc)
+    return obs, action, reward, next_obs, done, trunc
+
+
 class ExperienceReplay(ABC):
     def __init__(self, capacity: int):
         self.capacity = capacity
@@ -49,15 +60,7 @@ class ExperienceReplay(ABC):
             done[i] = d
             # the truncated is store from idx_size to -1 in done_truncated
             truncated[i] = t
-
-        # from numpy to tensor
-        obs = torch.from_numpy(obs)
-        next_obs = torch.from_numpy(next_obs)
-        action = torch.from_numpy(action)
-        reward = torch.from_numpy(reward)
-        done = torch.from_numpy(done)
-        truncated = torch.from_numpy(truncated)
-        return obs, action, reward, next_obs, done, truncated
+        return cvt2tensor(obs, action, reward, next_obs, done, truncated)
 
     @abstractmethod
     def sample(self, *args, **kwargs):

@@ -169,12 +169,14 @@ class DQNValueFunction(ValueFunction):
 
         obs_action_value = outputs.gather(1, actions)
         # in [prioritized experience replay]() algorithm, weight is used to adjust the importance of the samples
+
         diff = obs_action_value - q_value
         if weight is not None:
             weight = torch.as_tensor(weight, device=self.device, dtype=torch.float32).resize_as_(diff)
             diff_clipped = torch.clip(diff, -1, 1) * weight
         else:
             diff_clipped = torch.clip(diff, -1, 1)
+
         loss = F.mse_loss(diff_clipped, torch.zeros_like(diff_clipped))
         loss.backward()
         self.optimizer.step()
@@ -231,18 +233,12 @@ class DQNExperienceReplay(UniformExperienceReplay):
             reward[i] = r
             done[i] = d
             truncated[i] = t
-
-        obs = torch.from_numpy(obs)
-        next_obs = torch.from_numpy(next_obs)
-        action = torch.from_numpy(action)
-        reward = torch.from_numpy(reward)
-        done = torch.from_numpy(done)
-        truncated = torch.from_numpy(truncated)
-
-        return obs, action, reward, next_obs, done, truncated
+        # return obs, action, reward, next_obs, done, truncated
+        return cvt2tensor(obs, action, reward, next_obs, done, truncated)
 
     def sample(self, batch_size: int):
-        idx = [random.randint(self.phi_channel-1,self.__len__()-1) for _ in range(batch_size)]  #np.random.choice(np.arange(self.phi_channel, self.__len__()), batch_size, replace=False)
+        idx = [random.randint(self.phi_channel-1, self.__len__()-1) for _ in range(batch_size)]
+        #np.random.choice(np.arange(self.phi_channel, self.__len__()), batch_size, replace=False)
         return self.get_items(idx)
 
 

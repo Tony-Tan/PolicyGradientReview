@@ -41,24 +41,21 @@ class AtariEnv:
                 self.remove_flickering = kwargs['remove_flickering'] if 'remove_flickering' in kwargs.keys() else True
                 self.last_frame = None
                 self.raw_state = None
-                # self.lives_counter = 0
+                self.lives_counter = 0
                 self.env_type = 'Atari'
                 self.action_space = self.env.action_space
                 self.state_space = self.env.observation_space
                 if self.logger:
                     self.logger.msg(f'env id: {env_id} |repeat_action_probability: 0 ')
-                    self.logger.msg(f'frame_skip: {self.frame_skip} |screen_size: {self.screen_size} |'
-                                    f'grayscale_obs:{True} |scale_obs:{False}')
+                    self.logger.msg(f'screen_size: {self.screen_size} | grayscale_obs:{self.gray_state_Y} | '
+                                    f'scale_obs:{self.scale_state}')
         else:
             raise EnvError('atari game not exist in openai gymnasium')
-
-        # self.logger('EnvWrapper init: {env_id} from {env_type} had be built'.
-        #             format(env_id=self.env_id, env_type=self.env_type))
     def __process_frame(self, frame):
 
         if self.gray_state_Y:
-            # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2YUV)[:, :, 0]
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2YUV)[:, :, 0]
+            # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         if self.screen_size:
             frame = cv2.resize(frame, [self.screen_size, self.screen_size], interpolation=cv2.INTER_AREA)
         if self.scale_state:
@@ -68,50 +65,33 @@ class AtariEnv:
     def reset(self):
         """Implement the `reset` method that initializes the environment to its initial state"""
         state, info = self.env.reset()
-        self.raw_state = state
-        if 'lives' in info.keys():
-            self.lives_counter = info['lives']
-        if self.remove_flickering:
-            self.last_frame = state
+        # if 'lives' in info.keys():
+        #     self.lives_counter = info['lives']
+        self.last_frame = state
         state = self.__process_frame(state)
         return state, info
 
     def step(self, action):
-        reward_cum = 0
-        state = done = trunc = info = None
-        state_temp = self.last_frame
-        for i in range(self.frame_skip):
-            state, reward, done, trunc, info = self.env.step(action)
-            # for display
-            self.raw_state = state
-            if self.remove_flickering:
-                state_temp = np.maximum(state_temp, state)
-                # cv2.imshow('temp', np.hstack([state,state_temp]))
-                # cv2.waitKey(0)
-            if 'lives' in info.keys():
-                if info['lives'] < self.lives_counter:
-                    self.lives_counter = info['lives']
-                    reward_cum = -1
-                    break
-                elif info['lives'] > self.lives_counter:
-                    self.lives_counter = info['lives']
-                    reward = +1
-            reward_cum += reward
-            if done or trunc:
-                break
-        # if self.remove_flickering:
-        #     state_temp = state
-        #     state = np.maximum(state, self.last_frame)
-        #     self.last_frame = state_temp
+        state, reward, done, trunc, info = self.env.step(action)
+        # if 'lives' in info.keys():
+        #     if info['lives'] < self.lives_counter:
+        #         self.lives_counter = info['lives']
+        #         reward_cum = -1
+        #         break
+        #     elif info['lives'] > self.lives_counter:
+        #         self.lives_counter = info['lives']
+        #         reward = +1
+        state_removed_flickering = np.maximum(self.last_frame, state)
         self.last_frame = state
-        state = self.__process_frame(state_temp)
-        return state, reward_cum, done, trunc, info
+        state_processed = self.__process_frame(state_removed_flickering)
+
+        return state_processed, reward, done, trunc, info
 
     def render(self):
         """
         Include a `render` method for visualizing the environment's current state.
         """
-        return self.raw_state
+        return self.last_frame
 
 
 if __name__ == '__main__':

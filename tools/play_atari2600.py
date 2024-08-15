@@ -12,7 +12,7 @@ parser.add_argument('--env_name', default='ALE/SpaceInvaders-v5', type=str,
 parser.add_argument('--device', default='cuda:0', type=str,
                     help='calculation device default: cuda')
 parser.add_argument('--model_path',
-                    default='../exps/dqn/ALE-SpaceInvaders-v5_2024-08-12-20-35-14/best.pth', type=str,
+                    default='../exps/dqn/ALE-SpaceInvaders-v5_2024-08-15-00-16-40/best.pth', type=str,
                     help='exp save path，default: ../exps/dqn/')
 parser.add_argument('--epsilon_for_test', default='0.05', type=float,
                     help='epsilon greedy for testing:')
