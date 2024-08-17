@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from environments.env_wrapper import *
+from environments.env_atari import *
 
 
 class Agent(ABC):

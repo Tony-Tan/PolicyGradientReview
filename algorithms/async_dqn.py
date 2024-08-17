@@ -3,7 +3,7 @@ from agents.async_dqn_agent import *
 import argparse
 import random
 from agents.dqn_agent import *
-from environments.env_wrapper import AtariEnv
+from environments.env_atari import AtariEnv
 from exploration.epsilon_greedy import *
 from utils.configurator import Configurator
 from tools.dqn_play_ground import DQNPlayGround

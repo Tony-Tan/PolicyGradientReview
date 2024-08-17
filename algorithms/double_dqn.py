@@ -1,7 +1,7 @@
 import argparse
 from tools.dqn_play_ground import DQNPlayGround
 from agents.double_dqn_agent import *
-from environments.env_wrapper import AtariEnv
+from environments.env_atari import AtariEnv
 from exploration.epsilon_greedy import *
 import copy
 import cv2

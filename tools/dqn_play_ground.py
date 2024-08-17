@@ -85,7 +85,8 @@ class DQNPlayGround:
                 # store the transition
                 self.agent.store(state, action, reward, next_state, done, truncated)
                 # train the agent 1 step
-                self.agent.train_one_step()
+                if step_i % self.cfg['skip_k_frame'] == 0 and len(self.agent.memory) > self.cfg['replay_start_size']:
+                    self.agent.train_one_step()
                 # update the state
                 state = next_state
                 # update the reward cumulated in the episode

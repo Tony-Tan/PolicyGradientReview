@@ -1,4 +1,4 @@
-from environments.env_wrapper import *
+from environments.env_atari import *
 from abc import ABC, abstractmethod
 
 
