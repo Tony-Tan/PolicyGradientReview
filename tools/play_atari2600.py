@@ -38,7 +38,7 @@ while True:
         state_show = cv2.cvtColor(env.render(), cv2.cv2.COLOR_BGR2RGB)
         cv2.imshow(args.env_name, cv2.resize(state_show, [state_show.shape[1]*5, state_show.shape[0]*5]))
         cv2.imshow('state', cv2.resize(state, [state.shape[1] * 5, state.shape[0] * 5], interpolation=cv2.INTER_NEAREST))
-        cv2.waitKey(16)
+        cv2.waitKey(0)
         obs = dqn_agent.perception_mapping(state, step_i)
         action, _ = dqn_agent.select_action(obs, exploration_method)
         next_state, reward, done, truncated, inf = env.step(action)

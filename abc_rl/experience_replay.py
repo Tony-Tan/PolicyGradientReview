@@ -4,8 +4,8 @@ import torch
 import torch.multiprocessing as mp
 
 
-def cvt2tensor(obs: np.ndarray, action:np.ndarray, reward:np.ndarray,
-                   next_obs: np.ndarray, done:np.ndarray, trunc:np.ndarray):
+def cvt2tensor(obs: np.ndarray, action: np.ndarray, reward: np.ndarray,
+               next_obs: np.ndarray, done: np.ndarray, trunc: np.ndarray):
     obs = torch.from_numpy(obs)
     next_obs = torch.from_numpy(next_obs)
     action = torch.from_numpy(action)
@@ -146,7 +146,7 @@ class ShareMemory(ABC):
         self.buffer = manager.list()
         self.lock = manager.Lock()  # 添加一个锁
 
-    def store(self,  observation, action, reward, next_observation, done, truncated, rank: int=None):
+    def store(self, observation, action, reward, next_observation, done, truncated, rank: int = None):
         if not rank:
             with self.lock:
                 self.buffer.append([observation, action, reward, next_observation, done, truncated])
@@ -171,4 +171,3 @@ class ShareMemory(ABC):
     @abstractmethod
     def sample(self, *args, **kwargs):
         pass
-

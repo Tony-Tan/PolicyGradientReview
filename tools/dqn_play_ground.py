@@ -60,7 +60,7 @@ class DQNPlayGround:
             state, info = self.env.reset()
             done = truncated = run_test = False
             step_i = reward_cumulated = 0
-            no_op_steps = np.random.randint(self.cfg['no_op_max'])
+            no_op_steps = np.random.randint(self.cfg['no_op_max'])*self.cfg['skip_k_frame']
             action = self.env.action_space.sample()
             while not (done or truncated):
                 # perception mapping

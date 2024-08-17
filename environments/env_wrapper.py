@@ -51,8 +51,8 @@ class AtariEnv:
                                     f'scale_obs:{self.scale_state}')
         else:
             raise EnvError('atari game not exist in openai gymnasium')
-    def __process_frame(self, frame):
 
+    def __process_frame(self, frame):
         if self.gray_state_Y:
             frame = cv2.cvtColor(frame, cv2.COLOR_RGB2YUV)[:, :, 0]
             # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
