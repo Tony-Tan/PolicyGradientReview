@@ -41,6 +41,7 @@ class AtariEnv:
                 self.remove_flickering = kwargs['remove_flickering'] if 'remove_flickering' in kwargs.keys() else True
                 self.last_frame = None
                 self.raw_state = None
+                self.render_frame = None
                 self.lives_counter = 0
                 self.env_type = 'Atari'
                 self.action_space = self.env.action_space
@@ -68,7 +69,9 @@ class AtariEnv:
         # if 'lives' in info.keys():
         #     self.lives_counter = info['lives']
         self.last_frame = state
+        self.render_frame = state
         state = self.__process_frame(state)
+
         return state, info
 
     def step(self, action):
@@ -76,22 +79,18 @@ class AtariEnv:
         # if 'lives' in info.keys():
         #     if info['lives'] < self.lives_counter:
         #         self.lives_counter = info['lives']
-        #         reward_cum = -1
-        #         break
-        #     elif info['lives'] > self.lives_counter:
-        #         self.lives_counter = info['lives']
-        #         reward = +1
+        #         reward = -1
         state_removed_flickering = np.maximum(self.last_frame, state)
+        self.render_frame = state_removed_flickering
         self.last_frame = state
         state_processed = self.__process_frame(state_removed_flickering)
-
         return state_processed, reward, done, trunc, info
 
     def render(self):
         """
         Include a `render` method for visualizing the environment's current state.
         """
-        return self.last_frame
+        return self.render_frame
 
 
 if __name__ == '__main__':

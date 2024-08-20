@@ -12,7 +12,7 @@ parser.add_argument('--env_name', default='ALE/SpaceInvaders-v5', type=str,
 parser.add_argument('--device', default='cuda:0', type=str,
                     help='calculation device default: cuda')
 parser.add_argument('--model_path',
-                    default='../exps/dqn/ALE-SpaceInvaders-v5_2024-08-15-00-16-40/best.pth', type=str,
+                    default='../exps/dqn/ALE-SpaceInvaders-v5_2024-08-19-15-17-54/best.pth', type=str,
                     help='exp save path，default: ../exps/dqn/')
 parser.add_argument('--epsilon_for_test', default='0.05', type=float,
                     help='epsilon greedy for testing:')
@@ -38,11 +38,12 @@ while True:
         state_show = cv2.cvtColor(env.render(), cv2.cv2.COLOR_BGR2RGB)
         cv2.imshow(args.env_name, cv2.resize(state_show, [state_show.shape[1]*5, state_show.shape[0]*5]))
         cv2.imshow('state', cv2.resize(state, [state.shape[1] * 5, state.shape[0] * 5], interpolation=cv2.INTER_NEAREST))
-        cv2.waitKey(0)
+        cv2.waitKey(10)
         obs = dqn_agent.perception_mapping(state, step_i)
         action, _ = dqn_agent.select_action(obs, exploration_method)
         next_state, reward, done, truncated, inf = env.step(action)
-        print(reward)
+        if reward != 0:
+            print(reward)
         reward_cum += reward
         state = next_state
         step_i += 1
