@@ -67,12 +67,11 @@ class DQNPlayGround:
                 obs = self.agent.perception_mapping(state, step_i)
                 # no op for the first few steps and then select action by epsilon greedy or other exploration methods
                 if step_i >= no_op_steps:
-                    if step_i % self.cfg['skip_k_frame'] == 0:
-                        if len(self.agent.memory) > self.cfg['replay_start_size']:
-                            action, _ = self.agent.select_action(obs)
-                        else:
-                            # random action
-                            action = self.env.action_space.sample()
+                    if len(self.agent.memory) > self.cfg['replay_start_size']:
+                        action, _ = self.agent.select_action(obs)
+                    else:
+                        # random action
+                        action = self.env.action_space.sample()
                 else:
                     action = 0  # no op
                 # environment step
@@ -85,7 +84,7 @@ class DQNPlayGround:
                 # store the transition
                 self.agent.store(state, action, reward, next_state, done, truncated)
                 # train the agent 1 step
-                if training_steps % self.cfg['skip_k_frame'] == 0 and len(self.agent.memory) > self.cfg['replay_start_size']:
+                if len(self.agent.memory) > self.cfg['replay_start_size']:
                     self.agent.train_one_step()
                 # update the state
                 state = next_state

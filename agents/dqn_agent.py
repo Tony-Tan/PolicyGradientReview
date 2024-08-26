@@ -45,6 +45,7 @@ class DQNAtariReward(RewardShaping):
 
     def __init__(self):
         super().__init__()
+        self.max_abs_r = 0
 
     def __call__(self, reward):
         """
@@ -56,9 +57,9 @@ class DQNAtariReward(RewardShaping):
         :return: Clipped reward
         """
         if reward > 0:
-            return 1
+            return reward / 100.
         elif reward < 0:
-            return -1
+            return reward / 100.
         else:
             return 0
 
@@ -116,7 +117,7 @@ class DQNValueFunction(ValueFunction):
         self.synchronize_value_nn()
         # self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
         self.optimizer = torch.optim.RMSprop( self.value_nn.parameters(),
-                                              lr=0.01,
+                                              lr=learning_rate,
                                               alpha=0.95,        # squared gradient momentum
                                               eps=0.01,          # minimum squared gradient
                                               momentum=0.95,     # gradient momentum
@@ -273,6 +274,7 @@ class DQNAgent(Agent):
         self.training_episodes = training_episodes
         self.update_step = 0
         self.step_c = step_c
+        self.loss_log = []
 
     # Select an action based on the given observation and exploration method.
     def select_action(self, obs: np.ndarray, exploration_method: Exploration = None) -> tuple:
@@ -319,10 +321,12 @@ class DQNAgent(Agent):
             loss = self.value_function.update(samples)
             self.update_step += 1
             # synchronize the target value neural network with the value neural network every step_c steps
+            self.loss_log.append(np.mean(loss))
             if self.update_step % self.step_c == 0:
                 self.value_function.synchronize_value_nn()
                 if self.logger:
-                    self.logger.tb_scalar('loss', np.mean(loss), self.update_step)
+                    self.logger.tb_scalar('loss', np.mean(np.array(self.loss_log)), self.update_step)
+                    self.loss_log = []
 
     def save_model(self, model_label: str = 'last'):
         self.value_function.save(model_label)

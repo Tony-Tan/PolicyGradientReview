@@ -5,7 +5,7 @@ from gymnasium import envs
 from gymnasium import Wrapper
 from gymnasium.wrappers import AtariPreprocessing
 from utils.commons import *
-
+from gymnasium.spaces import Discrete
 custom_env_list = []
 
 
@@ -31,6 +31,7 @@ class AtariEnv:
                 self.env_id = env_id
                 try:
                     self.env = gym.make(env_id, repeat_action_probability=0.0, frameskip=1, render_mode=None)
+                    # self.env = DQNAtariActionWrapper(self.env)
                 except gym.error.Error as e:
                     raise EnvError(f"Failed to create environment: {str(e)}")
                 self.screen_size = kwargs['screen_size'] if 'screen_size' in kwargs.keys() else None
@@ -40,16 +41,16 @@ class AtariEnv:
                 self.scale_state = kwargs['scale_state'] if 'scale_state' in kwargs.keys() else False
                 self.remove_flickering = kwargs['remove_flickering'] if 'remove_flickering' in kwargs.keys() else True
                 self.last_frame = None
-                self.raw_state = None
                 self.render_frame = None
-                self.lives_counter = 0
                 self.env_type = 'Atari'
                 self.action_space = self.env.action_space
                 self.state_space = self.env.observation_space
                 if self.logger:
                     self.logger.msg(f'env id: {env_id} |repeat_action_probability: 0 ')
-                    self.logger.msg(f'screen_size: {self.screen_size} | grayscale_obs:{self.gray_state_Y} | '
-                                    f'scale_obs:{self.scale_state}')
+                    self.logger.msg(f'screen_size: {self.screen_size} | grayscale_obs:{self.gray_state_Y} \n'
+                                    f'scale_obs:{self.scale_state} | action space size: {self.action_space.n}\n'
+                                    f'remove flickering: {self.remove_flickering} | frame skip: {self.frame_skip}\n'
+                                    f'state space shape: {self.state_space.shape} ')
         else:
             raise EnvError('atari game not exist in openai gymnasium')
 
@@ -66,8 +67,6 @@ class AtariEnv:
     def reset(self):
         """Implement the `reset` method that initializes the environment to its initial state"""
         state, info = self.env.reset()
-        # if 'lives' in info.keys():
-        #     self.lives_counter = info['lives']
         self.last_frame = state
         self.render_frame = state
         state = self.__process_frame(state)
@@ -75,14 +74,17 @@ class AtariEnv:
         return state, info
 
     def step(self, action):
-        state, reward, done, trunc, info = self.env.step(action)
-        # if 'lives' in info.keys():
-        #     if info['lives'] < self.lives_counter:
-        #         self.lives_counter = info['lives']
-        #         reward = -1
-        state_removed_flickering = np.maximum(self.last_frame, state)
-        self.render_frame = state_removed_flickering
-        self.last_frame = state
+        state, reward, done, trunc, info = None, 0, False, False, None
+        state_removed_flickering = None
+        for _ in range(self.frame_skip):
+            state, reward_, done, trunc, info = self.env.step(action)
+            reward += reward_
+            state_removed_flickering = np.maximum(self.last_frame, state)
+            self.render_frame = state_removed_flickering
+            self.last_frame = state
+            if done or trunc:
+                break
+
         state_processed = self.__process_frame(state_removed_flickering)
         return state_processed, reward, done, trunc, info
 
@@ -91,6 +93,38 @@ class AtariEnv:
         Include a `render` method for visualizing the environment's current state.
         """
         return self.render_frame
+
+
+class DQNAtariActionWrapper(gym.ActionWrapper):
+    def __init__(self, env):
+        super(DQNAtariActionWrapper, self).__init__(env)
+
+        # define the action space
+        self.action_space = Discrete(4)
+
+        # four actions: NOOP, FIRE, RIGHT, LEFT
+        self._action_map = self._get_action_map()
+
+    def _get_action_map(self):
+        # get the action mapping
+        actions = {
+            "NOOP": 0,
+            "FIRE": 1,
+            "RIGHT": 3,
+            "LEFT": 4
+        }
+
+        # new action space
+        return [
+            actions.get("NOOP", 0),  # NOOP
+            actions.get("FIRE", 1),  # FIRE
+            actions.get("RIGHT", 3),  # RIGHT
+            actions.get("LEFT", 4)  # LEFT
+        ]
+
+    def action(self, action):
+        # map to the real action
+        return self._action_map[action]
 
 
 if __name__ == '__main__':
