@@ -45,7 +45,7 @@ class DQNAtariReward(RewardShaping):
 
     def __init__(self):
         super().__init__()
-        self.max_abs_r = 0
+        self.max_abs_r = 1
 
     def __call__(self, reward):
         """
@@ -56,12 +56,15 @@ class DQNAtariReward(RewardShaping):
         :param reward: Input reward
         :return: Clipped reward
         """
-        if reward > 0:
-            return reward / 100.
-        elif reward < 0:
-            return reward / 100.
-        else:
-            return 0
+        # if reward > 0:
+        #     return reward / 100.
+        # elif reward < 0:
+        #     return reward / 100.
+        # else:
+        #     return 0
+        if np.abs(reward) > self.max_abs_r:
+            self.max_abs_r = np.abs(reward)
+        return reward
 
 
 class DQNPerceptionMapping(PerceptionMapping):
@@ -140,10 +143,11 @@ class DQNValueFunction(ValueFunction):
         return msv
 
     # Update the value function with the given samples
-    def update(self, samples: tuple, weight=None):
+    def update(self, samples: tuple, reward_scale: float = 1.0, weight=None):
 
         """
         :param samples: Input samples
+        :param reward_scale: Reward scale r = r * reward_scale
         :param weight: Importance weight for prioritized experience replay
         """
         obs_tensor = samples[0].to(self.device, non_blocking=True)
@@ -155,7 +159,7 @@ class DQNValueFunction(ValueFunction):
 
         # calculate the $q$ value of next state
         max_next_state_value = self.max_state_value(next_obs_tensor)
-        reward_tensor.resize_as_(max_next_state_value)
+        reward_tensor = reward_tensor.resize_as_(max_next_state_value) * reward_scale
 
         truncated_tensor.resize_as_(max_next_state_value)
         termination_tensor.resize_as_(max_next_state_value)
@@ -318,7 +322,8 @@ class DQNAgent(Agent):
 
         if len(self.memory) > self.replay_start_size:
             samples = self.memory.sample(self.mini_batch_size)
-            loss = self.value_function.update(samples)
+
+            loss = self.value_function.update(samples, reward_scale=1./self.reward_shaping.max_abs_r)
             self.update_step += 1
             # synchronize the target value neural network with the value neural network every step_c steps
             self.loss_log.append(np.mean(loss))
