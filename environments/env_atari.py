@@ -95,36 +95,6 @@ class AtariEnv:
         return self.render_frame
 
 
-class DQNAtariActionWrapper(gym.ActionWrapper):
-    def __init__(self, env):
-        super(DQNAtariActionWrapper, self).__init__(env)
-
-        # define the action space
-        self.action_space = Discrete(4)
-
-        # four actions: NOOP, FIRE, RIGHT, LEFT
-        self._action_map = self._get_action_map()
-
-    def _get_action_map(self):
-        # get the action mapping
-        actions = {
-            "NOOP": 0,
-            "FIRE": 1,
-            "RIGHT": 3,
-            "LEFT": 4
-        }
-
-        # new action space
-        return [
-            actions.get("NOOP", 0),  # NOOP
-            actions.get("FIRE", 1),  # FIRE
-            actions.get("RIGHT", 3),  # RIGHT
-            actions.get("LEFT", 4)  # LEFT
-        ]
-
-    def action(self, action):
-        # map to the real action
-        return self._action_map[action]
 
 
 if __name__ == '__main__':
