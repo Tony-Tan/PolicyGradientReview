@@ -129,8 +129,7 @@ class DQNPlayGround:
                 self.logger.tb_scalar('q', avg_q, epoch_i)
                 self.logger.msg(f'{epoch_i} q: ' + str(avg_q))
                 # log the maximum reward
-                self.logger.tb_scalar('max abs reward ', self.agent.reward_shaping.max_abs_r, epoch_i)
-                self.logger.msg(f'{epoch_i} max abs reward: ' + str(self.agent.reward_shaping.max_abs_r))
+
                 if self.cfg['save_model']:
                     if avg_reward > best_reward:
                         best_reward = avg_reward

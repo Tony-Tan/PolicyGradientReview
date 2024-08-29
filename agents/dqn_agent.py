@@ -10,7 +10,7 @@
 # (https://github.com/Tony-Tan/Reinforcement-Learning-Data/tree/dev/exps/dqn)
 #
 # paper: [Human-level control through deep reinforcement learning](https://www.nature.com/articles/nature14236)
-import numpy as np
+import math
 import random
 import torch.optim
 import torch.nn.functional as F
@@ -46,6 +46,7 @@ class DQNAtariReward(RewardShaping):
     def __init__(self):
         super().__init__()
         self.max_abs_r = 1
+        self.magnitude = 0
 
     def __call__(self, reward):
         """
@@ -64,7 +65,8 @@ class DQNAtariReward(RewardShaping):
         #     return 0
         if np.abs(reward) > self.max_abs_r:
             self.max_abs_r = np.abs(reward)
-        return reward
+            self.magnitude = 10 ** math.floor(math.log10(self.max_abs_r))
+        return reward / self.magnitude
 
 
 class DQNPerceptionMapping(PerceptionMapping):
@@ -143,7 +145,7 @@ class DQNValueFunction(ValueFunction):
         return msv
 
     # Update the value function with the given samples
-    def update(self, samples: tuple, reward_scale: float = 1.0, weight=None):
+    def update(self, samples: tuple, weight=None):
 
         """
         :param samples: Input samples
@@ -159,7 +161,7 @@ class DQNValueFunction(ValueFunction):
 
         # calculate the $q$ value of next state
         max_next_state_value = self.max_state_value(next_obs_tensor)
-        reward_tensor = reward_tensor.resize_as_(max_next_state_value) * reward_scale
+        reward_tensor = reward_tensor.resize_as_(max_next_state_value)
 
         truncated_tensor.resize_as_(max_next_state_value)
         termination_tensor.resize_as_(max_next_state_value)
@@ -323,7 +325,7 @@ class DQNAgent(Agent):
         if len(self.memory) > self.replay_start_size:
             samples = self.memory.sample(self.mini_batch_size)
 
-            loss = self.value_function.update(samples, reward_scale=1./self.reward_shaping.max_abs_r)
+            loss = self.value_function.update(samples)
             self.update_step += 1
             # synchronize the target value neural network with the value neural network every step_c steps
             self.loss_log.append(np.mean(loss))
