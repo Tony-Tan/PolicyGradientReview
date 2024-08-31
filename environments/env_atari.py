@@ -30,7 +30,8 @@ class AtariEnv:
             if 'ALE' in env_id:
                 self.env_id = env_id
                 try:
-                    self.env = gym.make(env_id, repeat_action_probability=0.0, frameskip=1, render_mode=None)
+                    self.env = gym.make(env_id, repeat_action_probability=0.0, frameskip=1, render_mode=None,
+                                        obs_type="grayscale")
                     # self.env = DQNAtariActionWrapper(self.env)
                 except gym.error.Error as e:
                     raise EnvError(f"Failed to create environment: {str(e)}")
@@ -55,9 +56,9 @@ class AtariEnv:
             raise EnvError('atari game not exist in openai gymnasium')
 
     def __process_frame(self, frame):
-        if self.gray_state_Y:
-            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2YUV)[:, :, 0]
-            # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        # if self.gray_state_Y:
+            # frame = cv2.cvtColor(frame, cv2.COLOR_RGB2YUV)[:, :, 0]
+            # frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
         if self.screen_size:
             frame = cv2.resize(frame, [self.screen_size, self.screen_size], interpolation=cv2.INTER_AREA)
         if self.scale_state:
@@ -83,6 +84,7 @@ class AtariEnv:
             self.render_frame = state_removed_flickering
             self.last_frame = state
             if done or trunc:
+                reward = -1
                 break
 
         state_processed = self.__process_frame(state_removed_flickering)

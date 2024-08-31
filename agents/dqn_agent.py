@@ -46,7 +46,6 @@ class DQNAtariReward(RewardShaping):
     def __init__(self):
         super().__init__()
         self.max_abs_r = 1
-        self.magnitude = 0
 
     def __call__(self, reward):
         """
@@ -57,16 +56,8 @@ class DQNAtariReward(RewardShaping):
         :param reward: Input reward
         :return: Clipped reward
         """
-        # if reward > 0:
-        #     return reward / 100.
-        # elif reward < 0:
-        #     return reward / 100.
-        # else:
-        #     return 0
-        if np.abs(reward) > self.max_abs_r:
-            self.max_abs_r = np.abs(reward)
-            self.magnitude = 10 ** math.floor(math.log10(self.max_abs_r))
-        return reward / self.magnitude
+        reward = np.clip(reward, a_min=-1, a_max=1)
+        return reward
 
 
 class DQNPerceptionMapping(PerceptionMapping):
@@ -120,13 +111,14 @@ class DQNValueFunction(ValueFunction):
         self.target_value_nn = DQNAtari(input_channel, action_dim).to(device)
         self.target_value_nn.eval()
         self.synchronize_value_nn()
-        # self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
-        self.optimizer = torch.optim.RMSprop( self.value_nn.parameters(),
-                                              lr=learning_rate,
-                                              alpha=0.95,        # squared gradient momentum
-                                              eps=0.01,          # minimum squared gradient
-                                              momentum=0.95,     # gradient momentum
-                                              weight_decay=0)
+        self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
+
+        # self.optimizer = torch.optim.RMSprop( self.value_nn.parameters(),
+        #                                       lr=learning_rate,
+        #                                       alpha=0.95,        # squared gradient momentum
+        #                                       eps=0.01,          # minimum squared gradient
+        #                                       momentum=0.95,     # gradient momentum
+        #                                       weight_decay=0)
         self.learning_rate = learning_rate
         self.gamma = gamma
         self.device = device
