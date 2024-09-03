@@ -60,20 +60,17 @@ class DQNPlayGround:
             state, info = self.env.reset()
             done = truncated = run_test = False
             step_i = reward_cumulated = 0
-            no_op_steps = np.random.randint(self.cfg['no_op_max'])*self.cfg['skip_k_frame']
             action = self.env.action_space.sample()
             while not (done or truncated):
                 # perception mapping
                 obs = self.agent.perception_mapping(state, step_i)
-                # no op for the first few steps and then select action by epsilon greedy or other exploration methods
-                if step_i >= no_op_steps:
-                    if len(self.agent.memory) > self.cfg['replay_start_size']:
-                        action, _ = self.agent.select_action(obs)
-                    else:
-                        # random action
-                        action = self.env.action_space.sample()
+
+                if len(self.agent.memory) > self.cfg['replay_start_size']:
+                    action, _ = self.agent.select_action(obs)
                 else:
-                    action = 0  # no op
+                    # random action
+                    action = self.env.action_space.sample()
+
                 # environment step
                 next_state, reward_raw, done, truncated, inf = self.env.step(action)
 
@@ -84,7 +81,8 @@ class DQNPlayGround:
                 # store the transition
                 self.agent.store(state, action, reward, next_state, done, truncated)
                 # train the agent 1 step
-                if len(self.agent.memory) > self.cfg['replay_start_size']:
+                if (len(self.agent.memory) > self.cfg['replay_start_size'] and
+                        training_steps % self.cfg['model_update_freq'] == 0):
                     self.agent.train_one_step()
                 # update the state
                 state = next_state

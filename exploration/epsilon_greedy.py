@@ -28,8 +28,7 @@ class DecayingEpsilonGreedy(Exploration):
     def __call__(self, values: np.ndarray):
         self.decaying_counter += 1
         self.epsilon = max(self.max_epsilon - self.decaying_counter * self.decay_rate, self.min_epsilon)
-        optimal_action = np.random.choice(
-            np.flatnonzero(values == np.max(values)))
+        optimal_action = np.random.choice(np.flatnonzero(values == np.max(values)))
         # if a float random number less than epsilon, then explore
         if np.random.random() < self.epsilon:
             return np.random.randint(0, len(values))

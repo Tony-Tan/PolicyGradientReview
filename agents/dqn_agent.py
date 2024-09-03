@@ -111,14 +111,14 @@ class DQNValueFunction(ValueFunction):
         self.target_value_nn = DQNAtari(input_channel, action_dim).to(device)
         self.target_value_nn.eval()
         self.synchronize_value_nn()
-        self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
+        # self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate, momentum=0.95)
 
-        # self.optimizer = torch.optim.RMSprop( self.value_nn.parameters(),
-        #                                       lr=learning_rate,
-        #                                       alpha=0.95,        # squared gradient momentum
-        #                                       eps=0.01,          # minimum squared gradient
-        #                                       momentum=0.95,     # gradient momentum
-        #                                       weight_decay=0)
+        self.optimizer = torch.optim.RMSprop( self.value_nn.parameters(),
+                                              lr=learning_rate,
+                                              alpha=0.95,        # squared gradient momentum
+                                              eps=0.01,          # minimum squared gradient
+                                              momentum=0,        # momentum factor
+                                              weight_decay=0)
         self.learning_rate = learning_rate
         self.gamma = gamma
         self.device = device
@@ -229,20 +229,27 @@ class DQNExperienceReplay(UniformExperienceReplay):
         truncated = np.zeros(idx_size, dtype=np.float32)
 
         for i, idx_i in enumerate(idx):
-            buffer_slice = self.buffer[idx_i - self.phi_channel + 1:idx_i + 1]
-            obs[i] = np.array([buf[0] for buf in buffer_slice], dtype=np.float32)
-            next_obs[i] = np.array([buf[3] for buf in buffer_slice], dtype=np.float32)
+            obs_i = np.zeros((self.phi_channel, *obs_shape), dtype=np.float32)
+            next_obs_i = np.zeros((self.phi_channel, *obs_shape), dtype=np.float32)
 
-            _, a, r, _, d, t = buffer_slice[-1]
-            action[i] = a
-            reward[i] = r
-            done[i] = d
-            truncated[i] = t
-        # return obs, action, reward, next_obs, done, truncated
+            action[i] = self.buffer[idx_i][1]
+            reward[i] = self.buffer[idx_i][2]
+            done[i] = self.buffer[idx_i][4]
+            truncated[i] = self.buffer[idx_i][5]
+            obs_i[self.phi_channel - 1] = self.buffer[idx_i][0]
+            next_obs_i[self.phi_channel - 1] = self.buffer[idx_i][3]
+            for j in range(1, self.phi_channel):
+                if self.buffer[idx_i-j][4] or self.buffer[idx_i-j][5]:
+                    break
+                obs_i[self.phi_channel - j - 1] = self.buffer[idx_i-j][0]
+                next_obs_i[self.phi_channel - j - 1] = self.buffer[idx_i - j][3]
+            obs[i] = obs_i
+            next_obs[i] = next_obs_i
+
         return cvt2tensor(obs, action, reward, next_obs, done, truncated)
 
     def sample(self, batch_size: int):
-        idx = [random.randint(self.phi_channel-1, self.__len__()-1) for _ in range(batch_size)]
+        idx = [random.randint(self.phi_channel, self.__len__()-1) for _ in range(batch_size)]
         #np.random.choice(np.arange(self.phi_channel, self.__len__()), batch_size, replace=False)
         return self.get_items(idx)
 
