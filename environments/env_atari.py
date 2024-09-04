@@ -32,7 +32,6 @@ class AtariEnv:
                 self.env_id = env_id
                 try:
                     self.env = gym.make(env_id, repeat_action_probability=0.0, frameskip=1, render_mode=None)
-                    # self.env = DQNAtariActionWrapper(self.env)
                 except gym.error.Error as e:
                     raise EnvError(f"Failed to create environment: {str(e)}")
                 self.screen_size = kwargs['screen_size'] if 'screen_size' in kwargs.keys() else None
@@ -60,8 +59,8 @@ class AtariEnv:
 
     def __process_frame(self, frame):
         if self.gray_state_Y:
-            # frame = cv2.cvtColor(frame, cv2.COLOR_RGB2YUV)[:, :, 0]
-            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2YUV)[:, :, 0]
+            #frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
         if self.screen_size:
             frame = cv2.resize(frame, [self.screen_size, self.screen_size], interpolation=cv2.INTER_AREA)
         if self.scale_state:
@@ -110,8 +109,6 @@ class AtariEnv:
         Include a `render` method for visualizing the environment's current state.
         """
         return self.render_frame
-
-
 
 
 if __name__ == '__main__':
