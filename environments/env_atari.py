@@ -107,7 +107,6 @@ class AtariEnv:
                 break
             if info['lives'] < self.lives:
                 self.lives = info['lives']
-                done = True
                 break
         state_removed_flickering = np.max(np.stack(self._obs_buffer), axis=0)
         self.render_frame = state_removed_flickering

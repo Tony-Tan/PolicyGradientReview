@@ -118,6 +118,9 @@ class DQNValueFunction(ValueFunction):
                                               alpha=0.95,        # squared gradient momentum
                                               momentum=0.95,        # gradient momentum
                                               eps=0.01)        # minimum squared gradient
+        # loger optimizer info into logger
+        self.logger.msg(f'optimizer: {self.optimizer}')
+
         self.learning_rate = learning_rate
         self.gamma = gamma
         self.device = device

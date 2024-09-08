@@ -58,11 +58,9 @@ class DQNPlayGround:
         best_reward = -np.inf
         while training_steps < self.cfg['training_steps']:
             state, info = self.env.reset()
-            lives = info['lives'] if 'lives' in info else 0
             done = truncated = run_test = False
             step_i = reward_cumulated = 0
-            action = self.env.action_space.sample()
-            while not ((done or truncated) and lives == 0):
+            while not (done or truncated):
                 # perception mapping
                 obs = self.agent.perception_mapping(state, step_i)
 
@@ -71,14 +69,10 @@ class DQNPlayGround:
                 else:
                     # random action
                     action = self.env.action_space.sample()
-
                 # environment step
                 next_state, reward_raw, done, truncated, info = self.env.step(action)
-                lives = info['lives'] if 'lives' in info else 0
                 # reward shaping
                 reward = self.agent.reward_shaping(reward_raw)
-                # perception mapping next state
-                # next_obs = self.agent.perception_mapping(next_state, step_i)
                 # store the transition
                 self.agent.store(state, action, reward, next_state, done, truncated)
                 # train the agent 1 step
@@ -100,8 +94,6 @@ class DQNPlayGround:
                 training_steps += 1
                 # update the step counter of the current episode
                 step_i += 1
-                # cv2.imshow('state', state)
-                # cv2.waitKey(10)
             # log the training reward
             self.logger.tb_scalar('training reward', reward_cumulated, training_steps)
             if run_test:
@@ -148,14 +140,12 @@ class DQNPlayGround:
         step_cum = 0
         for i in range(test_episode_num):
             state, info = env.reset()
-            lives = info['lives'] if 'lives' in info else 0
             done = truncated = False
             step_i = 0
-            while not ((done or truncated) and lives == 0):
+            while not (done or truncated) :
                 obs = self.agent.perception_mapping(state, step_i)
                 action, _ = self.agent.select_action(obs, exploration_method)
                 next_state, reward, done, truncated, info = env.step(action)
-                lives = info['lives'] if 'lives' in info else 0
                 reward_cum += reward
                 state = next_state
                 step_i += 1
