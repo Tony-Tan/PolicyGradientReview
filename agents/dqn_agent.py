@@ -111,14 +111,13 @@ class DQNValueFunction(ValueFunction):
         self.target_value_nn = DQNAtari(input_channel, action_dim).to(device)
         self.target_value_nn.eval()
         self.synchronize_value_nn()
-        # self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate, momentum=0.95)
+        # self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
 
         self.optimizer = torch.optim.RMSprop( self.value_nn.parameters(),
                                               lr=learning_rate,
                                               alpha=0.95,        # squared gradient momentum
-                                              eps=0.01,          # minimum squared gradient
-                                              momentum=0,        # momentum factor
-                                              weight_decay=0)
+                                              momentum=0.95,        # gradient momentum
+                                              eps=0.01)        # minimum squared gradient
         self.learning_rate = learning_rate
         self.gamma = gamma
         self.device = device
@@ -236,6 +235,7 @@ class DQNExperienceReplay(UniformExperienceReplay):
             reward[i] = self.buffer[idx_i][2]
             done[i] = self.buffer[idx_i][4]
             truncated[i] = self.buffer[idx_i][5]
+
             obs_i[self.phi_channel - 1] = self.buffer[idx_i][0]
             next_obs_i[self.phi_channel - 1] = self.buffer[idx_i][3]
             for j in range(1, self.phi_channel):

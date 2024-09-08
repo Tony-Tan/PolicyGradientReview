@@ -58,10 +58,11 @@ class DQNPlayGround:
         best_reward = -np.inf
         while training_steps < self.cfg['training_steps']:
             state, info = self.env.reset()
+            lives = info['lives'] if 'lives' in info else 0
             done = truncated = run_test = False
             step_i = reward_cumulated = 0
             action = self.env.action_space.sample()
-            while not (done or truncated):
+            while not ((done or truncated) and lives == 0):
                 # perception mapping
                 obs = self.agent.perception_mapping(state, step_i)
 
@@ -72,8 +73,8 @@ class DQNPlayGround:
                     action = self.env.action_space.sample()
 
                 # environment step
-                next_state, reward_raw, done, truncated, inf = self.env.step(action)
-
+                next_state, reward_raw, done, truncated, info = self.env.step(action)
+                lives = info['lives'] if 'lives' in info else 0
                 # reward shaping
                 reward = self.agent.reward_shaping(reward_raw)
                 # perception mapping next state
@@ -147,12 +148,14 @@ class DQNPlayGround:
         step_cum = 0
         for i in range(test_episode_num):
             state, info = env.reset()
+            lives = info['lives'] if 'lives' in info else 0
             done = truncated = False
             step_i = 0
-            while not (done or truncated):
+            while not ((done or truncated) and lives == 0):
                 obs = self.agent.perception_mapping(state, step_i)
                 action, _ = self.agent.select_action(obs, exploration_method)
-                next_state, reward, done, truncated, inf = env.step(action)
+                next_state, reward, done, truncated, info = env.step(action)
+                lives = info['lives'] if 'lives' in info else 0
                 reward_cum += reward
                 state = next_state
                 step_i += 1

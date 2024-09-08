@@ -6,7 +6,8 @@ from gymnasium import Wrapper
 from gymnasium.wrappers import AtariPreprocessing
 from utils.commons import *
 from gymnasium.spaces import Discrete
-from collections import  deque
+from collections import deque
+
 custom_env_list = []
 
 
@@ -31,7 +32,8 @@ class AtariEnv:
             if 'ALE' in env_id:
                 self.env_id = env_id
                 try:
-                    self.env = gym.make(env_id, repeat_action_probability=0.0, frameskip=1, render_mode=None)
+                    self.env = gym.make(env_id, repeat_action_probability=0.0, frameskip=1,
+                                        render_mode=None, difficulty=0)
                 except gym.error.Error as e:
                     raise EnvError(f"Failed to create environment: {str(e)}")
                 self.screen_size = kwargs['screen_size'] if 'screen_size' in kwargs.keys() else None
@@ -60,35 +62,43 @@ class AtariEnv:
     def __process_frame(self, frame):
         if self.gray_state_Y:
             frame = cv2.cvtColor(frame, cv2.COLOR_RGB2YUV)[:, :, 0]
-            #frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+            # frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
         if self.screen_size:
             frame = cv2.resize(frame, [self.screen_size, self.screen_size], interpolation=cv2.INTER_AREA)
         if self.scale_state:
             frame = frame / 255.
         return frame
 
-    def reset(self):
-        """Implement the `reset` method that initializes the environment to its initial state"""
-
+    def __reset_fire_env(self):
         state, info = self.env.reset()
+        self._obs_buffer.clear()
         # fire game to start the game you should first press the fire button
         if self.env.unwrapped.get_action_meanings()[1] == 'FIRE':
             self.env.step(1)
             self.env.step(2)
+        return state, info
 
+    def reset(self):
+        """Implement the `reset` method that initializes the environment to its initial state"""
+        state, info = self.__reset_fire_env()
         # no op for the first few steps and then select action by epsilon greedy or other exploration methods
-        no_op_steps = np.random.randint(self.no_op_max)
+        no_op_steps = np.random.randint(1, self.no_op_max)
         for _ in range(no_op_steps):
-            state, _, _, _, info = self.env.step(0)
+            state, _, d, t, info = self.env.step(0)
+            self._obs_buffer.append(state)
+            if d or t:
+                state, info = self.__reset_fire_env()
         #
         self.lives = info['lives']
         self.last_frame = state
         self.render_frame = state
-        state = self.__process_frame(state)
-        return state, info
+        state_removed_flickering = np.max(np.stack(self._obs_buffer), axis=0)
+        state_processed = self.__process_frame(state_removed_flickering)
+        return state_processed, info
 
     def step(self, action):
         state, reward, done, trunc, info = None, 0, False, False, None
+        self._obs_buffer.clear()
         for _ in range(self.frame_skip):
             state, reward_, done, trunc, info = self.env.step(action)
             reward += reward_
@@ -97,10 +107,10 @@ class AtariEnv:
                 break
             if info['lives'] < self.lives:
                 self.lives = info['lives']
+                done = True
                 break
         state_removed_flickering = np.max(np.stack(self._obs_buffer), axis=0)
         self.render_frame = state_removed_flickering
-        self.last_frame = state
         state_processed = self.__process_frame(state_removed_flickering)
         return state_processed, reward, done, trunc, info
 
