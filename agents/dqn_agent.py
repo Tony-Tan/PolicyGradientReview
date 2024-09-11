@@ -112,11 +112,11 @@ class DQNValueFunction(ValueFunction):
         self.synchronize_value_nn()
         # self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
 
-        self.optimizer = torch.optim.RMSprop( self.value_nn.parameters(),
-                                              lr=learning_rate,
-                                              alpha=0.95,        # squared gradient momentum
-                                              momentum=0.,        # gradient momentum
-                                              eps=0.01)        # minimum squared gradient
+        self.optimizer = torch.optim.RMSprop(self.value_nn.parameters(),
+                                             lr=learning_rate,
+                                             alpha=0.95,  # squared gradient momentum
+                                             momentum=0.,  # gradient momentum
+                                             eps=0.01)  # minimum squared gradient
         # loger optimizer info into logger
         self.logger.msg(f'optimizer: {self.optimizer}')
 
@@ -241,9 +241,9 @@ class DQNExperienceReplay(UniformExperienceReplay):
             obs_i[self.phi_channel - 1] = self.buffer[idx_i][0]
             next_obs_i[self.phi_channel - 1] = self.buffer[idx_i][3]
             for j in range(1, self.phi_channel):
-                if self.buffer[idx_i-j][4] or self.buffer[idx_i-j][5]:
+                if self.buffer[idx_i - j][4] or self.buffer[idx_i - j][5]:
                     break
-                obs_i[self.phi_channel - j - 1] = self.buffer[idx_i-j][0]
+                obs_i[self.phi_channel - j - 1] = self.buffer[idx_i - j][0]
                 next_obs_i[self.phi_channel - j - 1] = self.buffer[idx_i - j][3]
             obs[i] = obs_i
             next_obs[i] = next_obs_i
@@ -251,8 +251,8 @@ class DQNExperienceReplay(UniformExperienceReplay):
         return cvt2tensor(obs, action, reward, next_obs, done, truncated)
 
     def sample(self, batch_size: int):
-        idx = [random.randint(self.phi_channel, self.__len__()-1) for _ in range(batch_size)]
-        #np.random.choice(np.arange(self.phi_channel, self.__len__()), batch_size, replace=False)
+        idx = [random.randint(self.phi_channel, self.__len__() - 1) for _ in range(batch_size)]
+        # np.random.choice(np.arange(self.phi_channel, self.__len__()), batch_size, replace=False)
         return self.get_items(idx)
 
 
@@ -339,5 +339,5 @@ class DQNAgent(Agent):
     def save_model(self, model_label: str = 'last'):
         self.value_function.save(model_label)
 
-    def load_model(self, model_path:str):
+    def load_model(self, model_path: str):
         self.value_function.load(model_path)

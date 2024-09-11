@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 from torch.utils.tensorboard import SummaryWriter
 
+
 # log class
 # class Logger:
 #     def __init__(self, log_name: str, log_path: str = './', print_in_terminal: bool = True):
@@ -37,7 +38,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 class Logger:
-    def __init__(self,  log_path: str, exp_name: str, print_in_terminal: bool = True):
+    def __init__(self, log_path: str, exp_name: str, print_in_terminal: bool = True):
         if not os.path.exists(log_path):
             os.makedirs(log_path)
         self.exp_name = exp_name
@@ -91,7 +92,6 @@ class EnvNotExist(Exception):
 class PolicyNotImplement(Exception):
     def __str__(self):
         return 'Policy Has Not Been Implemented'
-
 
 
 if __name__ == '__main__':

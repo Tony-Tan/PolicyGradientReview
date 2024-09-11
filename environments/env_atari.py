@@ -72,10 +72,17 @@ class AtariEnv:
     def __reset_fire_env(self):
         state, info = self.env.reset()
         self._obs_buffer.clear()
-        # fire game to start the game you should first press the fire button
-        if self.env.unwrapped.get_action_meanings()[1] == 'FIRE':
-            self.env.step(1)
-            self.env.step(2)
+
+        # Unwrap the environment to access Atari-specific methods
+        env = self.env.unwrapped
+
+        # Ensure the environment has 'get_action_meanings' method
+        if hasattr(env, 'get_action_meanings'):
+            # fire game to start the game, you should first press the fire button
+            if env.get_action_meanings()[1] == 'FIRE':
+                env.step(1)  # Fire
+                env.step(2)  # Up (or whatever action is needed)
+
         return state, info
 
     def reset(self):
