@@ -120,6 +120,8 @@ class AtariEnv:
         return self.render_frame
 
 
+
+
 if __name__ == '__main__':
     for key_i in envs.registry.keys():
         print(key_i)

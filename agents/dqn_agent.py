@@ -45,7 +45,6 @@ class DQNAtariReward(RewardShaping):
 
     def __init__(self):
         super().__init__()
-        self.max_abs_r = 1
 
     def __call__(self, reward):
         """
@@ -56,7 +55,7 @@ class DQNAtariReward(RewardShaping):
         :param reward: Input reward
         :return: Clipped reward
         """
-        reward = np.clip(reward, a_min=-1, a_max=1)
+        reward = np.clip(reward, a_min=-1., a_max=1.)
         return reward
 
 
@@ -116,7 +115,7 @@ class DQNValueFunction(ValueFunction):
         self.optimizer = torch.optim.RMSprop( self.value_nn.parameters(),
                                               lr=learning_rate,
                                               alpha=0.95,        # squared gradient momentum
-                                              momentum=0.95,        # gradient momentum
+                                              momentum=0.,        # gradient momentum
                                               eps=0.01)        # minimum squared gradient
         # loger optimizer info into logger
         self.logger.msg(f'optimizer: {self.optimizer}')

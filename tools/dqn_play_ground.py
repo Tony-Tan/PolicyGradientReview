@@ -1,3 +1,4 @@
+import copy
 import random
 
 import cv2
@@ -6,6 +7,7 @@ from agents.dqn_agent import *
 from abc_rl.experience_replay import *
 from abc_rl.exploration import *
 from utils.configurator import *
+from environments.env_atari import *
 
 
 class DQNPlayGround:
@@ -14,7 +16,7 @@ class DQNPlayGround:
         self.env = env
         self.cfg = cfg
         self.logger = logger
-        self.metric = {'last reward': 0, 'last steps': 0, 'max reward': 0, 'max steps': 0}
+        self.metric = {'last reward': 0., 'last steps': 0., 'max reward': 0., 'max steps': 0.}
         self.held_out_obs = []
 
     def __del__(self):
@@ -57,9 +59,10 @@ class DQNPlayGround:
         # record
         best_reward = -np.inf
         while training_steps < self.cfg['training_steps']:
+            step_i = reward_cumulated = 0
             state, info = self.env.reset()
             done = truncated = run_test = False
-            step_i = reward_cumulated = 0
+
             while not (done or truncated):
                 # perception mapping
                 obs = self.agent.perception_mapping(state, step_i)
@@ -142,7 +145,7 @@ class DQNPlayGround:
             state, info = env.reset()
             done = truncated = False
             step_i = 0
-            while not (done or truncated) :
+            while not (done or truncated):
                 obs = self.agent.perception_mapping(state, step_i)
                 action, _ = self.agent.select_action(obs, exploration_method)
                 next_state, reward, done, truncated, info = env.step(action)
@@ -150,5 +153,5 @@ class DQNPlayGround:
                 state = next_state
                 step_i += 1
             step_cum += step_i
-        return (reward_cum / self.cfg['agent_test_episodes'],
-                step_cum / self.cfg['agent_test_episodes'])
+        return (reward_cum / test_episode_num,
+                step_cum / test_episode_num)
