@@ -46,10 +46,9 @@ class AtariEnv:
                 self.last_frame = None
                 self.render_frame = None
                 self.env_type = 'Atari'
-                self.lives = 0
                 self.action_space = self.env.action_space
                 self.state_space = self.env.observation_space
-                self._obs_buffer = deque(maxlen=2)
+                self._obs_buffer = deque(maxlen=4)
                 if self.logger:
                     self.logger.msg(f'env id: {env_id} |repeat_action_probability: 0 ')
                     self.logger.msg(f'screen_size: {self.screen_size} | grayscale_obs:{self.gray_state_Y} \n'
@@ -96,7 +95,6 @@ class AtariEnv:
             if d or t:
                 state, info = self.__reset_fire_env()
         #
-        self.lives = info['lives']
         self.last_frame = state
         self.render_frame = state
         state_removed_flickering = np.max(np.stack(self._obs_buffer), axis=0)
@@ -106,14 +104,12 @@ class AtariEnv:
     def step(self, action):
         state, reward, done, trunc, info = None, 0, False, False, None
         self._obs_buffer.clear()
+
         for _ in range(self.frame_skip):
             state, reward_, done, trunc, info = self.env.step(action)
             reward += reward_
             self._obs_buffer.append(state)
             if done or trunc:
-                break
-            if info['lives'] < self.lives:
-                self.lives = info['lives']
                 break
         state_removed_flickering = np.max(np.stack(self._obs_buffer), axis=0)
         self.render_frame = state_removed_flickering
@@ -125,8 +121,6 @@ class AtariEnv:
         Include a `render` method for visualizing the environment's current state.
         """
         return self.render_frame
-
-
 
 
 if __name__ == '__main__':

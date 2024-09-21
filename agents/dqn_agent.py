@@ -115,10 +115,11 @@ class DQNValueFunction(ValueFunction):
         self.optimizer = torch.optim.RMSprop(self.value_nn.parameters(),
                                              lr=learning_rate,
                                              alpha=0.95,  # squared gradient momentum
-                                             momentum=0.,  # gradient momentum
+                                             momentum=0,  # gradient momentum
                                              eps=0.01)  # minimum squared gradient
         # loger optimizer info into logger
-        self.logger.msg(f'optimizer: {self.optimizer}')
+        if self.logger:
+            self.logger.msg(f'optimizer: {self.optimizer}')
 
         self.learning_rate = learning_rate
         self.gamma = gamma
@@ -142,7 +143,6 @@ class DQNValueFunction(ValueFunction):
 
         """
         :param samples: Input samples
-        :param reward_scale: Reward scale r = r * reward_scale
         :param weight: Importance weight for prioritized experience replay
         """
         obs_tensor = samples[0].to(self.device, non_blocking=True)
