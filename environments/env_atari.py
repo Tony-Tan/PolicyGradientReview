@@ -46,6 +46,7 @@ class AtariEnv:
                 self.last_frame = None
                 self.render_frame = None
                 self.env_type = 'Atari'
+                self.lives_count = 0
                 self.action_space = self.env.action_space
                 self.state_space = self.env.observation_space
                 self._obs_buffer = deque(maxlen=4)
@@ -87,10 +88,12 @@ class AtariEnv:
     def reset(self):
         """Implement the `reset` method that initializes the environment to its initial state"""
         state, info = self.__reset_fire_env()
+
         # no op for the first few steps and then select action by epsilon greedy or other exploration methods
         no_op_steps = np.random.randint(1, self.no_op_max)
         for _ in range(no_op_steps):
             state, _, d, t, info = self.env.step(0)
+            self.lives_count = info['lives'] if 'lives' in info.keys() else 0
             self._obs_buffer.append(state)
             if d or t:
                 state, info = self.__reset_fire_env()
@@ -99,6 +102,9 @@ class AtariEnv:
         self.render_frame = state
         state_removed_flickering = np.max(np.stack(self._obs_buffer), axis=0)
         state_processed = self.__process_frame(state_removed_flickering)
+        if 'lives' in info.keys():
+            self.lives_count = info['lives']
+            info['lives_lost'] = False
         return state_processed, info
 
     def step(self, action):
@@ -111,6 +117,22 @@ class AtariEnv:
             self._obs_buffer.append(state)
             if done or trunc:
                 break
+            if 'lives' in info.keys():
+                if info['lives'] < self.lives_count:
+                    info['lives_lost'] = True
+                    self.lives_count = info['lives']
+                    break
+                else:
+                    info['lives_lost'] = False
+            # if 'lives' in info.keys():
+            #     if info['lives'] < self.lives_count:
+            #         reward = -1
+            #         self.lives_count = info['lives']
+            #         info['lives_lost'] = False
+            #         break
+            #     else:
+            #         info['lives_lost'] = False
+
         state_removed_flickering = np.max(np.stack(self._obs_buffer), axis=0)
         self.render_frame = state_removed_flickering
         state_processed = self.__process_frame(state_removed_flickering)
