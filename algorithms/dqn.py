@@ -8,7 +8,7 @@ from tools.dqn_play_ground import DQNPlayGround
 
 # Argument parser for command line arguments
 parser = argparse.ArgumentParser(description='PyTorch dqn training arguments')
-parser.add_argument('--env_name', default='ALE/Seaquest-v5', type=str,
+parser.add_argument('--env_name', default='ALE/SpaceInvaders-v5', type=str,
                     help='openai gym environment (default: ALE/Atlantis-v5)')
 parser.add_argument('--n_times', default=1, type=int,
                     help='how many times to run the experiment (default: 1)')

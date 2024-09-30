@@ -157,4 +157,4 @@ class DQNPlayGround:
                 state = next_state
                 step_i += 1
             step_cum += step_i
-        return (reward_cum / test_episode_num, step_cum / test_episode_num)
+        return reward_cum / test_episode_num, step_cum / test_episode_num

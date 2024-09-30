@@ -238,21 +238,30 @@ class DQNExperienceReplay(UniformExperienceReplay):
             done[i] = self.buffer[idx_i][4]
             truncated[i] = self.buffer[idx_i][5]
 
-            obs_i[self.phi_channel - 1] = self.buffer[idx_i][0]
-            next_obs_i[self.phi_channel - 1] = self.buffer[idx_i][3]
-            for j in range(1, self.phi_channel):
-                if self.buffer[idx_i - j][4] or self.buffer[idx_i - j][5]:
-                    break
-                obs_i[self.phi_channel - j - 1] = self.buffer[idx_i - j][0]
-                next_obs_i[self.phi_channel - j - 1] = self.buffer[idx_i - j][3]
+            # done or truncated should be dealt with separately
+            # obs_i[self.phi_channel - 1] = self.buffer[idx_i][0]
+            # next_obs_i[self.phi_channel - 1] = self.buffer[idx_i][3]
+            # for j in range(1, self.phi_channel):
+            #     if self.buffer[idx_i - j][4] or self.buffer[idx_i - j][5]:
+            #         break
+            #     obs_i[self.phi_channel - j - 1] = self.buffer[idx_i - j][0]
+            #     next_obs_i[self.phi_channel - j - 1] = self.buffer[idx_i - j][3]
+
+            # not concern done or truncated
+            for j in range(self.phi_channel):
+                obs_i[j] = self.buffer[idx_i - self.phi_channel + j + 1][0]
+                next_obs_i[j] = self.buffer[idx_i - self.phi_channel + j + 1][3]
+
             obs[i] = obs_i
             next_obs[i] = next_obs_i
 
         return cvt2tensor(obs, action, reward, next_obs, done, truncated)
 
     def sample(self, batch_size: int):
-        idx = [random.randint(self.phi_channel, self.__len__() - 1) for _ in range(batch_size)]
-        # np.random.choice(np.arange(self.phi_channel, self.__len__()), batch_size, replace=False)
+        idx = []
+        while len(idx) < batch_size:
+            idx_i = random.randint(self.phi_channel, self.__len__() - 1)
+            idx.append(idx_i)
         return self.get_items(idx)
 
 
