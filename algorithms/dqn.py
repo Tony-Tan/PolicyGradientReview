@@ -26,6 +26,15 @@ def main():
     logger = Logger(cfg['exp_path'], cfg['exp_name'])
     logger.msg('\nparameters:' + str(cfg))
 
+    # set seed
+    seed = cfg['seed']
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+    if 'cuda' in cfg['device']:
+        first_rand_int = torch.randint(0, 2 ** 32 - 1, (1,)).item()  # generate a random integer
+        torch.cuda.manual_seed(first_rand_int)  # set the seed for generating random numbers on the GPU
+
     env = AtariEnv(cfg['env_name'], frame_skip=cfg['skip_k_frame'], logger=logger, screen_size=cfg['screen_size'],
                    remove_flickering=True)
 

@@ -77,11 +77,7 @@ class DQNPlayGround:
                 # reward shaping
                 reward = self.agent.reward_shaping(reward_raw)
                 # store the transition
-                if 'lives_lost' in info.keys():
-                    lives_lost = info['lives_lost']
-                    self.agent.store(state, action, reward, next_state, done or lives_lost, truncated)
-                else:
-                    self.agent.store(state, action, reward, next_state, done, truncated)
+                self.agent.store(state, action, reward, next_state, done, truncated)
                 # train the agent 1 step
                 if (len(self.agent.memory) > self.cfg['replay_start_size'] and
                         training_steps % self.cfg['model_update_freq'] == 0):

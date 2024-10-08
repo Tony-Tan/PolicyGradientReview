@@ -88,7 +88,6 @@ class AtariEnv:
     def reset(self):
         """Implement the `reset` method that initializes the environment to its initial state"""
         state, info = self.__reset_fire_env()
-
         # no op for the first few steps and then select action by epsilon greedy or other exploration methods
         no_op_steps = np.random.randint(1, self.no_op_max)
         for _ in range(no_op_steps):
@@ -104,26 +103,26 @@ class AtariEnv:
         state_processed = self.__process_frame(state_removed_flickering)
         if 'lives' in info.keys():
             self.lives_count = info['lives']
-            info['lives_lost'] = False
         return state_processed, info
 
     def step(self, action):
         state, reward, done, trunc, info = None, 0, False, False, None
         self._obs_buffer.clear()
-
         for _ in range(self.frame_skip):
             state, reward_, done, trunc, info = self.env.step(action)
             reward += reward_
             self._obs_buffer.append(state)
             if done or trunc:
                 break
+
             if 'lives' in info.keys():
                 if info['lives'] < self.lives_count:
-                    info['lives_lost'] = True
+                    # info['lives_lost'] = True
+                    reward = -1
                     self.lives_count = info['lives']
                     break
-                else:
-                    info['lives_lost'] = False
+                # else:
+                #     info['lives_lost'] = False
             # if 'lives' in info.keys():
             #     if info['lives'] < self.lives_count:
             #         reward = -1

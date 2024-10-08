@@ -115,7 +115,7 @@ class DQNValueFunction(ValueFunction):
         self.optimizer = torch.optim.RMSprop(self.value_nn.parameters(),
                                              lr=learning_rate,
                                              alpha=0.95,  # squared gradient momentum
-                                             momentum=0.,  # gradient momentum
+                                             momentum=0,  # gradient momentum
                                              eps=0.01)  # minimum squared gradient
         # loger optimizer info into logger
         if self.logger:
@@ -239,18 +239,18 @@ class DQNExperienceReplay(UniformExperienceReplay):
             truncated[i] = self.buffer[idx_i][5]
 
             # done or truncated should be dealt with separately
-            # obs_i[self.phi_channel - 1] = self.buffer[idx_i][0]
-            # next_obs_i[self.phi_channel - 1] = self.buffer[idx_i][3]
-            # for j in range(1, self.phi_channel):
-            #     if self.buffer[idx_i - j][4] or self.buffer[idx_i - j][5]:
-            #         break
-            #     obs_i[self.phi_channel - j - 1] = self.buffer[idx_i - j][0]
-            #     next_obs_i[self.phi_channel - j - 1] = self.buffer[idx_i - j][3]
+            obs_i[self.phi_channel - 1] = self.buffer[idx_i][0]
+            next_obs_i[self.phi_channel - 1] = self.buffer[idx_i][3]
+            for j in range(1, self.phi_channel):
+                if self.buffer[idx_i - j][4] or self.buffer[idx_i - j][5]:
+                    break
+                obs_i[self.phi_channel - j - 1] = self.buffer[idx_i - j][0]
+                next_obs_i[self.phi_channel - j - 1] = self.buffer[idx_i - j][3]
 
             # not concern done or truncated
-            for j in range(self.phi_channel):
-                obs_i[j] = self.buffer[idx_i - self.phi_channel + j + 1][0]
-                next_obs_i[j] = self.buffer[idx_i - self.phi_channel + j + 1][3]
+            # for j in range(self.phi_channel):
+            #     obs_i[j] = self.buffer[idx_i - self.phi_channel + j + 1][0]
+            #     next_obs_i[j] = self.buffer[idx_i - self.phi_channel + j + 1][3]
 
             obs[i] = obs_i
             next_obs[i] = next_obs_i
@@ -262,6 +262,7 @@ class DQNExperienceReplay(UniformExperienceReplay):
         while len(idx) < batch_size:
             idx_i = random.randint(self.phi_channel, self.__len__() - 1)
             idx.append(idx_i)
+            idx = list(set(idx))
         return self.get_items(idx)
 
 
