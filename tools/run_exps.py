@@ -8,7 +8,6 @@ games = [
     "ALE/SpaceInvaders-v5",
     "ALE/Asterix-v5",
     "ALE/DoubleDunk-v5",
-    "ALE/Phoenix-v5",
     "ALE/Kangaroo-v5",
     "ALE/Atlantis-v5"
 ]

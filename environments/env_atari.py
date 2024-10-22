@@ -43,6 +43,7 @@ class AtariEnv:
                 self.scale_state = kwargs['scale_state'] if 'scale_state' in kwargs.keys() else False
                 self.remove_flickering = kwargs['remove_flickering'] if 'remove_flickering' in kwargs.keys() else True
                 self.no_op_max = kwargs['no_op_max'] if 'no_op_max' in kwargs.keys() else 30
+                self.seed = kwargs['seed'] if 'seed' in kwargs.keys() else 0
                 self.last_frame = None
                 self.render_frame = None
                 self.env_type = 'Atari'
@@ -70,7 +71,7 @@ class AtariEnv:
         return frame
 
     def __reset_fire_env(self):
-        state, info = self.env.reset()
+        state, info = self.env.reset(seed=self.seed)
         self._obs_buffer.clear()
 
         # Unwrap the environment to access Atari-specific methods
