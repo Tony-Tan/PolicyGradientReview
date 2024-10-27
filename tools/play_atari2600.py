@@ -35,7 +35,7 @@ while True:
     done = truncated = False
     step_i = 0
     while not (done or truncated):
-        state_show = cv2.cvtColor(env.render(), cv2.COLOR_BGR2RGB)
+        state_show = env.render()
         cv2.imshow(args.env_name, cv2.resize(state_show, [state_show.shape[1]*5, state_show.shape[0]*5]))
         cv2.imshow('state', cv2.resize(state, [state.shape[1] * 5, state.shape[0] * 5], interpolation=cv2.INTER_NEAREST))
         cv2.waitKey(30)

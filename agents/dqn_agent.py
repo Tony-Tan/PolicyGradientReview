@@ -115,7 +115,7 @@ class DQNValueFunction(ValueFunction):
         self.optimizer = torch.optim.RMSprop(self.value_nn.parameters(),
                                              lr=learning_rate,
                                              alpha=0.95,  # squared gradient momentum
-                                             momentum=0,  # gradient momentum
+                                             momentum=0.,  # gradient momentum
                                              eps=0.01)  # minimum squared gradient
         # loger optimizer info into logger
         if self.logger:

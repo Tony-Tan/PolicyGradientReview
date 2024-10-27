@@ -11,26 +11,43 @@ from utils.configurator import Configurator
 
 # Argument parser for command line arguments
 parser = argparse.ArgumentParser(description='PyTorch Double DQN training arguments')
-parser.add_argument('--env_name', default='ALE/Asterix-v5', type=str,
+parser.add_argument('--env_name', default='ALE/WizardOfWor-v5', type=str,
                     help='openai gym environment (default: ALE/Pong-v5)')
-parser.add_argument('--device', default='cuda:1', type=str,
+parser.add_argument('--device', default='cuda:0', type=str,
                     help='calculation device default: cuda')
 parser.add_argument('--log_path', default='../exps/double_dqn/', type=str,
                     help='log save path，default: ./log/')
+parser.add_argument('--save_model', default=True, type=bool,
+                    help='save model or not, default: True')
 
 # Load hyperparameters from yaml file and combine with command line arguments
 cfg = Configurator(parser, '../configs/double_dqn.yaml')
 
 
 def main():
-    logger = Logger(cfg['env_name'], cfg['log_path'])
+    cfg = Configurator(parser, '../configs/double_dqn.yaml')
+    logger = Logger(cfg['exp_path'], cfg['exp_name'])
     logger.msg('\nparameters:' + str(cfg))
-    env = AtariEnv(cfg['env_name'], frame_skip=cfg['skip_k_frame'])
+    seed = cfg['seed']
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    gym.utils.seeding.np_random(seed)
+
+    # 保证在CUDA下的可重复性
+    if torch.backends.cudnn.enabled:
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
+    env = AtariEnv(cfg['env_name'], frame_skip=cfg['skip_k_frame'], logger=logger, screen_size=cfg['screen_size'],
+                   remove_flickering=True, seed=cfg['seed'])
+
     double_dqn_agent = DoubleDQNAgent(cfg['screen_size'], env.action_space,
                                       cfg['mini_batch_size'], cfg['replay_buffer_size'], cfg['replay_start_size'],
-                                      cfg['learning_rate'], cfg['step_c'], cfg['agent_saving_period'], cfg['gamma'],
+                                      cfg['learning_rate'], cfg['step_c'],  cfg['gamma'],
                                       cfg['training_steps'], cfg['phi_channel'], cfg['epsilon_max'], cfg['epsilon_min'],
-                                      cfg['exploration_steps'], cfg['device'], logger)
+                                      cfg['exploration_steps'], cfg['device'],cfg['exp_path'], cfg['exp_name'], logger)
     dqn_pg = DQNPlayGround(double_dqn_agent, env, cfg, logger)
     dqn_pg.train()
 

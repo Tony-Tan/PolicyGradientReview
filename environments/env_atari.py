@@ -1,15 +1,13 @@
-# main class of env
 import cv2
 import gymnasium as gym
 from gymnasium import envs
-from gymnasium import Wrapper
-from gymnasium.wrappers import AtariPreprocessing
 from utils.commons import *
 from gymnasium.spaces import Discrete
 from collections import deque
+from gymnasium.wrappers import ResizeObservation, GrayScaleObservation, FrameStack
+from gymnasium.wrappers import AtariPreprocessing
 
 custom_env_list = []
-
 
 class EnvError(Exception):
     def __init__(self, error_inf):
@@ -17,6 +15,21 @@ class EnvError(Exception):
 
     def __str__(self):
         return 'Environment error: ' + self.error_inf
+
+
+class FireResetEnv(gym.Wrapper):
+    def __init__(self, env):
+        """Take action on reset for environments that are fixed until firing."""
+        super().__init__(env)
+        assert env.unwrapped.get_action_meanings()[1] == 'FIRE'
+        self.fire_action = 1
+
+    def reset(self, **kwargs):
+        self.env.reset(**kwargs)
+        obs, _, done, trunc, info = self.env.step(self.fire_action)
+        if done:
+            self.env.reset(**kwargs)
+        return obs, info
 
 
 class AtariEnv:
@@ -30,113 +43,51 @@ class AtariEnv:
     def __init__(self, env_id: str, **kwargs):
         if env_id in gym.envs.registry.keys():
             if 'ALE' in env_id:
-                self.env_id = env_id
-                try:
-                    self.env = gym.make(env_id, repeat_action_probability=0.0, frameskip=1,
-                                        render_mode=None, difficulty=0)
-                except gym.error.Error as e:
-                    raise EnvError(f"Failed to create environment: {str(e)}")
-                self.screen_size = kwargs['screen_size'] if 'screen_size' in kwargs.keys() else None
                 self.logger = kwargs['logger'] if 'logger' in kwargs.keys() else None
                 self.frame_skip = kwargs['frame_skip'] if 'frame_skip' in kwargs.keys() else 1
-                self.gray_state_Y = kwargs['gray_state_Y'] if 'gray_state_Y' in kwargs.keys() else True
-                self.scale_state = kwargs['scale_state'] if 'scale_state' in kwargs.keys() else False
-                self.remove_flickering = kwargs['remove_flickering'] if 'remove_flickering' in kwargs.keys() else True
                 self.no_op_max = kwargs['no_op_max'] if 'no_op_max' in kwargs.keys() else 30
                 self.seed = kwargs['seed'] if 'seed' in kwargs.keys() else 0
                 self.last_frame = None
                 self.render_frame = None
                 self.env_type = 'Atari'
-                self.lives_count = 0
+
+                self.env_id = env_id
+                try:
+                    self.env = gym.make(env_id, repeat_action_probability=0.0, frameskip=1, full_action_space=False)
+                except gym.error.Error as e:
+                    raise EnvError(f"Failed to create environment: {str(e)}")
+
+                self.env = AtariPreprocessing(self.env, noop_max=self.no_op_max, frame_skip=1,
+                                              screen_size=84, terminal_on_life_loss=False, grayscale_obs=True,
+                                              scale_obs=False)
+
+                self.env = FireResetEnv(self.env)
                 self.action_space = self.env.action_space
                 self.state_space = self.env.observation_space
-                self._obs_buffer = deque(maxlen=4)
-                if self.logger:
-                    self.logger.msg(f'env id: {env_id} |repeat_action_probability: 0 ')
-                    self.logger.msg(f'screen_size: {self.screen_size} | grayscale_obs:{self.gray_state_Y} \n'
-                                    f'scale_obs:{self.scale_state} | action space size: {self.action_space.n}\n'
-                                    f'remove flickering: {self.remove_flickering} | frame skip: {self.frame_skip}\n'
-                                    f'state space shape: {self.state_space.shape} ')
+                self._obs_buffer = deque(maxlen=2)  # Store the last two observations to compute the max
+
         else:
-            raise EnvError('atari game not exist in openai gymnasium')
-
-    def __process_frame(self, frame):
-        if self.gray_state_Y:
-            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2YUV)[:, :, 0]
-            # frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-        if self.screen_size:
-            frame = cv2.resize(frame, [self.screen_size, self.screen_size], interpolation=cv2.INTER_AREA)
-        if self.scale_state:
-            frame = frame / 255.
-        return frame
-
-    def __reset_fire_env(self):
-        state, info = self.env.reset(seed=self.seed)
-        self._obs_buffer.clear()
-
-        # Unwrap the environment to access Atari-specific methods
-        env = self.env.unwrapped
-
-        # Ensure the environment has 'get_action_meanings' method
-        if hasattr(env, 'get_action_meanings'):
-            # fire game to start the game, you should first press the fire button
-            if env.get_action_meanings()[1] == 'FIRE':
-                env.step(1)  # Fire
-                env.step(2)  # Up (or whatever action is needed)
-
-        return state, info
+            raise EnvError('Atari game not exist in openai gymnasium')
 
     def reset(self):
-        """Implement the `reset` method that initializes the environment to its initial state"""
-        state, info = self.__reset_fire_env()
-        # no op for the first few steps and then select action by epsilon greedy or other exploration methods
-        no_op_steps = np.random.randint(1, self.no_op_max)
-        for _ in range(no_op_steps):
-            state, _, d, t, info = self.env.step(0)
-            self.lives_count = info['lives'] if 'lives' in info.keys() else 0
-            self._obs_buffer.append(state)
-            if d or t:
-                state, info = self.__reset_fire_env()
-        #
-        self.last_frame = state
-        self.render_frame = state
-        state_removed_flickering = np.max(np.stack(self._obs_buffer), axis=0)
-        state_processed = self.__process_frame(state_removed_flickering)
-        if 'lives' in info.keys():
-            self.lives_count = info['lives']
-        return state_processed, info
+        self._obs_buffer.clear()
+        obs, info = self.env.reset()
+        self._obs_buffer.append(obs)
+        self.render_frame = obs
+        return obs, info
 
     def step(self, action):
-        state, reward, done, trunc, info = None, 0, False, False, None
-        self._obs_buffer.clear()
+        next_obs, reward, done, trunc, info = None, None, None, None, None
+        reward_sum = 0
         for _ in range(self.frame_skip):
-            state, reward_, done, trunc, info = self.env.step(action)
-            reward += reward_
-            self._obs_buffer.append(state)
+            next_obs, reward, done, trunc, info = self.env.step(action)
+            reward_sum += reward
+            self._obs_buffer.append(next_obs)
             if done or trunc:
                 break
-
-            if 'lives' in info.keys():
-                if info['lives'] < self.lives_count:
-                    # info['lives_lost'] = True
-                    reward = -1
-                    self.lives_count = info['lives']
-                    break
-                # else:
-                #     info['lives_lost'] = False
-            # if 'lives' in info.keys():
-            #     if info['lives'] < self.lives_count:
-            #         reward = -1
-            #         self.lives_count = info['lives']
-            #         info['lives_lost'] = False
-            #         break
-            #     else:
-            #         info['lives_lost'] = False
-
-        state_removed_flickering = np.max(np.stack(self._obs_buffer), axis=0)
-        self.render_frame = state_removed_flickering
-        state_processed = self.__process_frame(state_removed_flickering)
-        return state_processed, reward, done, trunc, info
+        next_obs = np.max(np.stack(self._obs_buffer), axis=0)
+        self.render_frame = next_obs
+        return next_obs, reward_sum, done, trunc, info
 
     def render(self):
         """
