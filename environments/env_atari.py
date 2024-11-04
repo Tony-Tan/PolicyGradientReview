@@ -72,8 +72,8 @@ class AtariEnv:
     def reset(self):
         self._obs_buffer.clear()
         obs, info = self.env.reset(seed=self.seed)
-        if 'lives' in info.keys():
-            self.life_counter = info['lives']
+        # if 'lives' in info.keys():
+        #     self.life_counter = info['lives']
         self._obs_buffer.append(obs)
         self.render_frame = obs
         return obs, info
@@ -85,10 +85,10 @@ class AtariEnv:
             next_obs, reward, done, trunc, info = self.env.step(action)
             reward_sum += reward
             self._obs_buffer.append(next_obs)
-            if self.life_counter > info['lives']:
-                done = True  # 标记子回合结束
-                reward_sum = -1  # 设置负奖励
-                self.life_counter = info['lives']
+            # if self.life_counter > info['lives']:
+            #     done = True  # 标记子回合结束
+            #     reward_sum = -1  # 设置负奖励
+            #     self.life_counter = info['lives']
             if done or trunc:
                 break
         next_obs = np.max(np.stack(self._obs_buffer), axis=0)

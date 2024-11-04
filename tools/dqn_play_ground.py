@@ -97,7 +97,7 @@ class DQNPlayGround:
                 training_steps += 1
                 # update the step counter of the current episode
                 step_i += 1
-                if done and info['lives'] == 0:
+                if done or truncated:
                     game_over = True
             # log the training reward
             self.logger.tb_scalar('training reward', reward_cumulated, training_steps)
@@ -145,7 +145,6 @@ class DQNPlayGround:
         step_cum = 0
         for i in range(test_episode_num):
             state, info = env.reset()
-            done = truncated = False
             step_i = 0
             game_over = False
             while not game_over:
@@ -155,7 +154,7 @@ class DQNPlayGround:
                 reward_cum += reward
                 state = next_state
                 step_i += 1
-                if done and info['lives'] == 0:
+                if done or truncated:
                     game_over = True
             step_cum += step_i
         return reward_cum / test_episode_num, step_cum / test_episode_num
