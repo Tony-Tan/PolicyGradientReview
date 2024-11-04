@@ -55,7 +55,7 @@ class DQNAtariReward(RewardShaping):
         :param reward: Input reward
         :return: Clipped reward
         """
-        reward = np.clip(reward, a_min=-1., a_max=1.)
+        reward = np.clip(reward, a_min=-1, a_max=1)
         return reward
 
 
@@ -115,7 +115,7 @@ class DQNValueFunction(ValueFunction):
         self.optimizer = torch.optim.RMSprop(self.value_nn.parameters(),
                                              lr=learning_rate,
                                              alpha=0.95,  # squared gradient momentum
-                                             momentum=0.,  # gradient momentum
+                                             momentum=0,  # gradient momentum
                                              eps=0.01)  # minimum squared gradient
         # loger optimizer info into logger
         if self.logger:
@@ -143,7 +143,7 @@ class DQNValueFunction(ValueFunction):
 
         """
         :param samples: Input samples
-        :param weight: Importance weight for prioritized experience replay
+        :param weight: Importance weight for prioritized exreplay
         """
         obs_tensor = samples[0].to(self.device, non_blocking=True)
         action_tensor = samples[1].to(self.device, non_blocking=True)

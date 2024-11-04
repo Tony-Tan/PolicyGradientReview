@@ -61,9 +61,9 @@ class DQNPlayGround:
         while training_steps < self.cfg['training_steps']:
             step_i = reward_cumulated = 0
             state, info = self.env.reset()
-            done = truncated = run_test = False
-
-            while not (done or truncated):
+            run_test = False
+            game_over = False
+            while not game_over:
                 # perception mapping
                 obs = self.agent.perception_mapping(state, step_i)
 
@@ -97,6 +97,8 @@ class DQNPlayGround:
                 training_steps += 1
                 # update the step counter of the current episode
                 step_i += 1
+                if done and info['lives'] == 0:
+                    game_over = True
             # log the training reward
             self.logger.tb_scalar('training reward', reward_cumulated, training_steps)
             if run_test:
@@ -145,12 +147,15 @@ class DQNPlayGround:
             state, info = env.reset()
             done = truncated = False
             step_i = 0
-            while not (done or truncated):
+            game_over = False
+            while not game_over:
                 obs = self.agent.perception_mapping(state, step_i)
                 action, _ = self.agent.select_action(obs, exploration_method)
                 next_state, reward, done, truncated, info = env.step(action)
                 reward_cum += reward
                 state = next_state
                 step_i += 1
+                if done and info['lives'] == 0:
+                    game_over = True
             step_cum += step_i
         return reward_cum / test_episode_num, step_cum / test_episode_num
