@@ -2,8 +2,9 @@
 #
 # the result of DQN agent on several atari games is shown below:
 #
-#
+# reward of DQN agent on Atari games
 # ![](https://raw.githubusercontent.com/Tony-Tan/Reinforcement-Learning-Data/dev/figures/DQN%202015%20rewards.png)
+# q value of DQN agent on Atari games
 # ![](https://raw.githubusercontent.com/Tony-Tan/Reinforcement-Learning-Data/dev/figures/DQN%202015%20q%20values.png)
 #
 # you can find the original data in the: [Reinforcement-Learning-Data]
@@ -25,7 +26,7 @@ from exploration.epsilon_greedy import *
 
 
 # Define the image normalization function
-# the input of neural network is the uint8 matrix, so we need to normalize the image to [-0.5,0.5]
+# the input of neural network is the uint8 matrix, so we need to normalize the image to [0, 1]
 def image_normalization(image_uint8):
     """
     Normalize the image to [0，1]
