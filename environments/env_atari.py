@@ -64,7 +64,7 @@ class AtariEnv:
                 self.env = FireResetEnv(self.env)
                 self.action_space = self.env.action_space
                 self.state_space = self.env.observation_space
-                self._obs_buffer = deque(maxlen=4)  # Store the last two observations to compute the max
+                self._obs_buffer = deque(maxlen=2)  # Store the last two observations to compute the max
 
         else:
             raise EnvError('Atari game not exist in openai gymnasium')
@@ -72,8 +72,6 @@ class AtariEnv:
     def reset(self):
         self._obs_buffer.clear()
         obs, info = self.env.reset(seed=self.seed)
-        # if 'lives' in info.keys():
-        #     self.life_counter = info['lives']
         self._obs_buffer.append(obs)
         self.render_frame = obs
         return obs, info
@@ -85,10 +83,6 @@ class AtariEnv:
             next_obs, reward, done, trunc, info = self.env.step(action)
             reward_sum += reward
             self._obs_buffer.append(next_obs)
-            # if self.life_counter > info['lives']:
-            #     done = True  # 标记子回合结束
-            #     reward_sum = -1  # 设置负奖励
-            #     self.life_counter = info['lives']
             if done or trunc:
                 break
         next_obs = np.max(np.stack(self._obs_buffer), axis=0)
