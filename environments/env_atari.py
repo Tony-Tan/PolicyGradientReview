@@ -50,7 +50,7 @@ class AtariEnv:
                 self.last_frame = None
                 self.render_frame = None
                 self.env_type = 'Atari'
-                self.life_counter = 0
+
                 self.env_id = env_id
                 try:
                     self.env = gym.make(env_id, repeat_action_probability=0.0, frameskip=1, full_action_space=False)
@@ -71,7 +71,7 @@ class AtariEnv:
 
     def reset(self):
         self._obs_buffer.clear()
-        obs, info = self.env.reset(seed=self.seed)
+        obs, info = self.env.reset()
         self._obs_buffer.append(obs)
         self.render_frame = obs
         return obs, info

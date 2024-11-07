@@ -116,8 +116,8 @@ class DQNValueFunction(ValueFunction):
         self.optimizer = torch.optim.RMSprop(self.value_nn.parameters(),
                                              lr=learning_rate,
                                              alpha=0.95,  # squared gradient momentum
-                                             eps=0.01,  # small constant for numerical stability
-                                             momentum=0.)
+                                             momentum=0,  # gradient momentum
+                                             eps=0.01)  # minimum squared gradient
         # loger optimizer info into logger
         if self.logger:
             self.logger.msg(f'optimizer: {self.optimizer}')
@@ -168,7 +168,7 @@ class DQNValueFunction(ValueFunction):
         action_tensor.resize_as_(reward_tensor)
         q_value.resize_as_(reward_tensor)
         actions = action_tensor.long()
-
+        self.optimizer.zero_grad()
         self.value_nn.train()
         # normalize the input image
         obs_tensor = image_normalization(obs_tensor)
@@ -185,7 +185,6 @@ class DQNValueFunction(ValueFunction):
             diff_clipped = torch.clip(diff, -1, 1)
 
         loss = F.mse_loss(diff_clipped, torch.zeros_like(diff_clipped))
-        self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
         self.update_step += 1
