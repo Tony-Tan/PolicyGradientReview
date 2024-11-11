@@ -15,10 +15,10 @@ base_command = ''
 home_directory = os.path.expanduser('~')
 if os.path.exists(f"{home_directory}/miniconda3/"):
     base_command = (f"{home_directory}/miniconda3/bin/conda run -n Reinforcement-Learning --no-capture-output python "
-                    f"{home_directory}/rl/algorithms/dqn.py --env_name")
+                    f"{home_directory}/rl/algorithms/double_dqn.py --env_name")
 elif os.path.exists(f"{home_directory}/anaconda3/"):
     base_command = (f"{home_directory}/anaconda3/bin/conda run -n Reinforcement-Learning --no-capture-output python "
-                    f"{home_directory}/rl/algorithms/dqn.py --env_name")
+                    f"{home_directory}/rl/algorithms/double_dqn.py --env_name")
 
 python_path = f"export PYTHONPATH=$PYTHONPATH:/{home_directory}/rl"
 # Activate your virtual environment command

@@ -12,11 +12,11 @@ gamma: 0.99
 no_op: 30
 exp_path: '../exps/double_dqn/'
 learning_rate: !!float 2.5e-4
-step_c: 10_000
-epsilon_max: 1.
-epsilon_min: 0.1
+step_c: 30_000
+epsilon_max: 0.1
+epsilon_min: 0.01
 exploration_steps: 1_000_000
-epsilon_for_test: 0.05
+epsilon_for_test: 0.001
 agent_test_episodes: 20
 held_out_states_num: 1000
 seed: 0

@@ -8,6 +8,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class DQNAtari(nn.Module):
     def __init__(self, input_channel_size: int, output_size: int):
         super(DQNAtari, self).__init__()
@@ -29,6 +30,17 @@ class DQNAtari(nn.Module):
         x = F.relu(x)
         x = self.fc_2(x)
         return x
+
+
+class DoubleDQNAtari(DQNAtari):
+    def __init__(self, input_channel_size: int, output_size: int):
+        super(DoubleDQNAtari, self).__init__(input_channel_size, output_size)
+        self.fc_2 = nn.Linear(512, output_size, bias=False)
+        self.shared_bias = nn.Parameter(torch.zeros(1))
+
+    def forward(self, x):
+        x = super(DoubleDQNAtari, self).forward(x)
+        return x + self.shared_bias
 
 
 # advanced network

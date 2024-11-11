@@ -1,4 +1,5 @@
 from agents.dqn_agent import *
+from models.dqn_networks import *
 import gc
 
 
@@ -7,6 +8,17 @@ class DoubleDQNValueFunction(DQNValueFunction):
                  gamma: float,   model_save_path: str, device: torch.device, logger: Logger):
         super(DoubleDQNValueFunction, self).__init__(input_channel, action_dim, learning_rate,
                                                      gamma,  model_save_path, device, logger)
+        self.value_nn = DoubleDQNAtari(input_channel, action_dim).to(device)
+        self.target_value_nn = DoubleDQNAtari(input_channel, action_dim).to(device)
+        self.target_value_nn.eval()
+        self.synchronize_value_nn()
+        # self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
+
+        self.optimizer = torch.optim.RMSprop(self.value_nn.parameters(),
+                                             lr=learning_rate,
+                                             alpha=0.95,  # squared gradient momentum
+                                             momentum=0,  # gradient momentum
+                                             eps=0.01)  # minimum squared gradient
 
     def max_state_value(self, obs_tensor):
         with torch.no_grad():
