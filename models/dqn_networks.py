@@ -48,7 +48,20 @@ class DuelingDQNAtari(DQNAtari):
     def __init__(self, input_channel_size: int, output_size: int):
         super(DuelingDQNAtari, self).__init__(input_channel_size, output_size)
         # for advanced output
+        self.fc = nn.Linear(3136, 512)
+        self.fc_2 = nn.Linear(512, output_size)
         self.fc_3 = nn.Linear(512, 1)
+
+    def _register_gradient_rescale(self):
+        """Rescales the gradients entering the last convolutional layer by 1/sqrt(2)."""
+
+        def rescale_gradients(grad):
+            return grad / (2 ** 0.5)
+
+        # Attach the hook to the last convolutional layer
+        self.conv3.weight.register_hook(rescale_gradients)
+        self.conv3.bias.register_hook(rescale_gradients)
+
     def forward(self, x):
         x = self.conv1(x)
         x = F.relu(x)  # self.bn1(x))
