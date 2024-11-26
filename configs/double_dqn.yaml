@@ -9,7 +9,7 @@ device: 'cuda: 0'
 screen_size: 84
 replay_start_size: 50_000
 gamma: 0.99
-no_op: 30
+no_op_max: 30
 exp_path: '../exps/double_dqn/'
 learning_rate: !!float 2.5e-4
 step_c: 30_000

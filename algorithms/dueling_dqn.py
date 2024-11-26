@@ -16,12 +16,13 @@ parser.add_argument('--device', default='cuda:0', type=str,
                     help='calculation device default: cuda')
 parser.add_argument('--save_model', default=True, type=bool,
                     help='save model or not, default: True')
-parser.add_argument('--exp_path', default='../exps/dueling_dqn/', type=str,
+parser.add_argument('--exp_path', default='../exps/dueling_ddqn/', type=str,
                     help='exp save path，default: ../exps/dueling_dqn/')
+
 
 def main():
     # Load hyperparameters from yaml file
-    cfg = Configurator(parser, '../configs/dueling_dqn.yaml')
+    cfg = Configurator(parser, '../configs/double_dqn.yaml')
     logger = Logger(cfg['exp_path'], cfg['exp_name'])
     logger.msg('\nparameters:' + str(cfg))
 
@@ -39,14 +40,15 @@ def main():
         torch.backends.cudnn.benchmark = False
     env = AtariEnv(cfg['env_name'], frame_skip=cfg['skip_k_frame'], logger=logger, screen_size=cfg['screen_size'],
                    remove_flickering=True, seed=cfg['seed'])
-    dueling_dqn_agent = DuelingDQNAgent(cfg['screen_size'], env.action_space, cfg['mini_batch_size'],
-                                        cfg['replay_buffer_size'], cfg['replay_start_size'], cfg['learning_rate'],
-                                        cfg['step_c'],
-                                        cfg['gamma'], cfg['training_steps'], cfg['phi_channel'],
-                                        cfg['epsilon_max'], cfg['epsilon_min'], cfg['exploration_steps'], cfg['device'],
-                                        cfg['exp_path'], cfg['exp_name'], logger)
+    dueling_ddqn_agent = DuelingDDQNAgent(cfg['screen_size'], env.action_space, cfg['mini_batch_size'],
+                                          cfg['replay_buffer_size'], cfg['replay_start_size'], cfg['learning_rate'],
+                                          cfg['step_c'],
+                                          cfg['gamma'], cfg['training_steps'], cfg['phi_channel'],
+                                          cfg['epsilon_max'], cfg['epsilon_min'], cfg['exploration_steps'],
+                                          cfg['device'],
+                                          cfg['exp_path'], cfg['exp_name'], logger)
 
-    dqn_pg = DQNPlayGround(dueling_dqn_agent, env, cfg, logger)
+    dqn_pg = DQNPlayGround(dueling_ddqn_agent, env, cfg, logger)
     dqn_pg.train()
 
 
