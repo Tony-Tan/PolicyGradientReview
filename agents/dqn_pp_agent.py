@@ -6,7 +6,7 @@ from agents.dqn_agent import *
 
 
 class ProportionalPrioritization(DQNExperienceReplay):
-    def __init__(self, capacity: int, phi_channel: int, device: torch.device, alpha: float = 0.6, beta: float = 0.4):
+    def __init__(self, capacity: int, phi_channel: int, device: torch.device, alpha: float = 1, beta: float = 0):
         super(ProportionalPrioritization, self).__init__(capacity, phi_channel)
 
         self.alpha = alpha
@@ -37,8 +37,8 @@ class DQNPPAgent(DQNAgent):
                  mini_batch_size: int, replay_buffer_size: int, replay_start_size: int,
                  learning_rate: float, step_c: int,
                  gamma: float, training_episodes: int, phi_channel: int, epsilon_max: float, epsilon_min: float,
-                 exploration_steps: int, device: torch.device, exp_path: str, exp_name: str, logger: Logger,
-                 alpha: float = 0.6, beta: float = 0.4):
+                 exploration_steps: int, device: torch.device, exp_path: str, exp_name: str,
+                 alpha: float, beta: float, logger: Logger):
         """
         Initialize the DQN agent with proportional prioritization.
 
@@ -66,9 +66,7 @@ class DQNPPAgent(DQNAgent):
                                          replay_buffer_size, replay_start_size, learning_rate, step_c,
                                          gamma, training_episodes, phi_channel, epsilon_max,
                                          epsilon_min, exploration_steps, device, exp_path, exp_name, logger)
-        del self.memory
-        gc.collect()
-        self.memory = ProportionalPrioritization(replay_buffer_size,phi_channel, device, alpha, beta)
+        self.memory = ProportionalPrioritization(replay_buffer_size, phi_channel, device, alpha, beta)
 
     def train_one_step(self):
         """
@@ -76,11 +74,12 @@ class DQNPPAgent(DQNAgent):
         """
         if len(self.memory) > self.replay_start_size:
             samples, w, idx = self.memory.sample(self.mini_batch_size)
-            loss = self.value_function.update(samples, w)
-            self.memory.p[idx] = (torch.as_tensor(loss, dtype=torch.float32).reshape(1, -1) +
-                                  torch.tensor(1e-5, dtype=torch.float32))
+            loss_value, diff = self.value_function.update(samples, w)
+            self.memory.p[idx] = torch.abs(diff.reshape(1, -1)) + 1e-10
+            print('prop')
+            print(self.memory.p[idx])
             self.update_step += 1
-            self.loss_log.append(np.mean(loss))
+            self.loss_log.append(loss_value)
             if self.update_step % self.step_c == 0:
                 self.value_function.synchronize_value_nn()
                 if self.logger:

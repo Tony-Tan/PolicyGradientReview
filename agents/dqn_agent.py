@@ -178,18 +178,27 @@ class DQNValueFunction(ValueFunction):
         # in [prioritized experience replay]() algorithm, weight is used to adjust the importance of the samples
 
         diff = obs_action_value - q_value
+        diff_clipped = torch.clip(diff, -1, 1)
         if weight is not None:
-            weight = torch.as_tensor(weight, device=self.device, dtype=torch.float32).resize_as_(diff)
-            diff_clipped = torch.clip(diff, -1, 1) * weight
-        else:
-            diff_clipped = torch.clip(diff, -1, 1)
 
-        loss = F.mse_loss(diff_clipped, torch.zeros_like(diff_clipped))
-        loss.backward()
-        self.optimizer.step()
+            individual_losses = F.mse_loss(diff_clipped, torch.zeros_like(diff_clipped), reduction='none')
+            individual_losses = individual_losses.squeeze()
+            weight = torch.as_tensor(weight, device=self.device, dtype=torch.float32).resize_as_(individual_losses)
+            weighted_losses = individual_losses * weight
+            print('weighted losses')
+            print(weighted_losses)
+            loss_value = weighted_losses.mean().detach().cpu().numpy().astype(np.float32)
+            loss = weighted_losses.mean()
+            loss.backward()
+            self.optimizer.step()
+        else:
+            loss = F.mse_loss(diff_clipped, torch.zeros_like(diff_clipped))
+            loss.backward()
+            self.optimizer.step()
+            loss_value = loss.detach().cpu().numpy().astype(np.float32)
         self.update_step += 1
         # return the clipped difference and the q value
-        return loss.detach().cpu().numpy().astype(np.float32)
+        return loss_value, diff_clipped.detach()
 
     # Calculate the value of the given phi tensor.
     def __call__(self, phi_tensor: torch.Tensor) -> np.ndarray:
@@ -337,7 +346,7 @@ class DQNAgent(Agent):
         if len(self.memory) > self.replay_start_size:
             samples = self.memory.sample(self.mini_batch_size)
 
-            loss = self.value_function.update(samples)
+            loss, diff = self.value_function.update(samples)
             self.update_step += 1
             # synchronize the target value neural network with the value neural network every step_c steps
             self.loss_log.append(np.mean(loss))

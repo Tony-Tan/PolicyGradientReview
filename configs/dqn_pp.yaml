@@ -11,12 +11,14 @@ replay_start_size: 50_000
 gamma: 0.99
 no_op_max: 30
 exp_path: '../exps/dqn_pp/'
-learning_rate: !!float 5e-4
+learning_rate: !!float 1e-3
 step_c: 10_000
-epsilon_max: 1.
+epsilon_max: 1
 epsilon_min: 0.1
 exploration_steps: 1_000_000
 epsilon_for_test: 0.05
 agent_test_episodes: 20
 held_out_states_num: 1000
 seed: 0
+alpha: 0.4
+beta: 0.6

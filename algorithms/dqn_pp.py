@@ -44,7 +44,7 @@ def main():
                               cfg['replay_buffer_size'], cfg['replay_start_size'], cfg['learning_rate'],
                               cfg['step_c'], cfg['gamma'], cfg['training_steps'], cfg['phi_channel'],
                               cfg['epsilon_max'], cfg['epsilon_min'], cfg['exploration_steps'],
-                              cfg['device'], cfg['exp_path'], cfg['exp_name'], logger)
+                              cfg['device'], cfg['exp_path'], cfg['exp_name'], cfg['alpha'], cfg['beta'], logger)
     dqn_pg = DQNPlayGround(dqn_pp_agent, env, cfg, logger)
     dqn_pg.train()
 
